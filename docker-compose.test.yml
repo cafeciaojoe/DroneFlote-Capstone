@@ -1,16 +1,29 @@
 version: "3.6"
 services:
-  imagedetect:
-    context: ./camera
-    network: ros-custom
-    container_name: imagedetect
-    ports:
-      - "9091:9090"
+  openpose:
+    build:
+      context: ./openpose-melodic-ros
+      networks:
+        - ros-custom
+      container_name: posedetect
+      ports:
+        - "9091:9090"
+
+#  imagedetect:
+#    build:
+#      context: ./camera
+#      networks:
+#        - ros-custom
+#      container_name: imagedetect
+#      ports:
+#        - "9091:9090"
 
 #  drone:
-#    context: ./drone
-#    network: ros-custom
-#    container_name: drone
-#    ports:
-#    - "9092:9090"
+#    build:
+#      context: ./drone
+#      networks:
+#        - ros-custom
+#      container_name: drone
+#      ports:
+#      - "9092:9090"
 
