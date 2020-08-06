@@ -6,8 +6,6 @@ services:
       networks:
         - ros-custom
       container_name: posedetect
-      ports:
-        - "9091:9090"
 
 #  imagedetect:
 #    build:
