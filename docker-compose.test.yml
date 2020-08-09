@@ -1,27 +1,26 @@
-version: "3.6"
+version: "3.7"
 services:
   openpose:
     build:
       context: ./openpose-melodic-ros
-      networks:
-        - ros-custom
-#      container_name: posedetect
+    networks:
+      - ros-custom
+    ports:
+      - "9090:9090"
 
 #  imagedetect:
 #    build:
 #      context: ./camera
-#      networks:
-#        - ros-custom
-#      container_name: imagedetect
-#      ports:
-#        - "9091:9090"
+#    networks:
+#      - ros-custom
+#    ports:
+#      - "9091:9090"
 
 #  drone:
 #    build:
 #      context: ./drone
-#      networks:
-#        - ros-custom
-#      container_name: drone
-#      ports:
-#      - "9092:9090"
+#    networks:
+#      - ros-custom
+#    ports:
+#    - "9092:9090"
 

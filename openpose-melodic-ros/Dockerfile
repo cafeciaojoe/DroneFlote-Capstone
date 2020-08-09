@@ -26,5 +26,6 @@ RUN mkdir /openpose/openpose/build
 WORKDIR /openpose/openpose/build
 RUN cmake ..
 RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+EXPOSE 9090
 # TODO - Add start of app
 #ENTRYPOINT ["source /opt/ros/melodic/setup.bash"]
