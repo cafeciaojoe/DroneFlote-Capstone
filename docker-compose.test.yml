@@ -8,19 +8,22 @@ services:
     ports:
       - "9090:9090"
 
-#  imagedetect:
-#    build:
-#      context: ./camera
-#    networks:
-#      - ros-custom
-#    ports:
-#      - "9091:9090"
+  posenet:
+    build:
+      context: ./posenet
+    networks:
+      - ros-custom
+    ports:
+      - "9091:9090"
 
-#  drone:
-#    build:
-#      context: ./drone
-#    networks:
-#      - ros-custom
-#    ports:
-#    - "9092:9090"
+  roscore:
+    build:
+      context: ./roscore
+    networks:
+      - ros-custom
+    ports:
+      - "9092:9090"
 
+networks:
+  ros-custom:
+    name: ros-custom

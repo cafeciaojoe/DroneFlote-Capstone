@@ -1,16 +1,16 @@
 version: "3.6"
 services:
   imagedetect:
-    context: ./camera
+    context: ./posenet
     network: ros-custom
     container_name: imagedetect
     ports:
       - "9091:9090"
 
-#  drone:
-#    context: ./drone
+#  roscore:
+#    context: ./roscore
 #    network: ros-custom
-#    container_name: drone
+#    container_name: roscore
 #    ports:
 #    - "9092:9090"
 
