@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:bionic
 WORKDIR /ros
 RUN apt update && apt upgrade -y
 

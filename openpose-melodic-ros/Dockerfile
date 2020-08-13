@@ -14,7 +14,8 @@ RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 RUN export LANG=en_US.UTF-8
 
 RUN apt update && apt install -y ros-melodic-desktop-full libopencv-contrib-dev libopencv-viz-dev libopencv3.2-java libopencv-contrib3.2 libopencv-viz3.2 
-RUN apt install -y python3-rosdep python3-catkin-pkg python3-rospkg
+RUN apt install -y python3-rosdep python3-catkin-pkg python3-rospkg python-dev
+RUN pip3 install numpy opencv-python wheel
 RUN rosdep init
 RUN rosdep update
 
@@ -24,7 +25,11 @@ WORKDIR /openpose
 RUN git clone https://github.com/CMU-Perceptual-Computing-Lab/openpose
 RUN mkdir /openpose/openpose/build 
 WORKDIR /openpose/openpose/build
-RUN cmake ..
+RUN cmake -DOpenCV_INCLUDE_DIRS=/home/"${USER}"/softwares/opencv/build/install/include \
+  -DOpenCV_LIBS_DIR=/home/"${USER}"/softwares/opencv/build/install/lib -DBUILD_PYTHON=ON ..
+RUN make -j`nproc`
+
+# RUN cmake .. -DBUILD_PYTHON=ON
 RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
 EXPOSE 9090
 # TODO - Add start of app

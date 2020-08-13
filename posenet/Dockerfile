@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:bionic
 WORKDIR /ros
 RUN apt update && apt upgrade -y
 
@@ -13,9 +13,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN locale-gen en_US en_US.UTF-8
 RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 RUN export LANG=en_US.UTF-8
-
-RUN apt update && apt install -y ros-melodic-desktop-full python3-rosdep python3-catkin-pkg python3-rospkg
+RUN apt update && apt install -y ros-melodic-desktop-full --install-recommends
+RUN apt install -y python3-rosdep python3-catkin-pkg python3-pip python3-rospkg python-dev libssl1.0-dev nodejs nodejs-dev node-gyp npm git
+#RUN apt update && apt install -y ros-melodic-desktop-full python3-rosdep python3-catkin-pkg python3-rospkg
 RUN rosdep init
 RUN rosdep update
 
 # Install posenet
+WORKDIR /
+RUN pip3 install tensorflow
+RUN git clone https://github.com/tensorflow/tfjs-models.git
+WORKDIR /tfjs-models/posenet
+#RUN npm install @tensorflow/tfjs-core @tensorflow/tfjs-converter
+#RUN npm install @tensorflow-models/posenet
+RUN npm install
