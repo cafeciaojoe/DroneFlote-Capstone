@@ -1,5 +1,6 @@
 from flask import Flask, render_template, json, request
 from flask_cors import CORS, cross_origin
+import rospy
 
 app = Flask("__main__")
 CORS(app)
@@ -13,7 +14,6 @@ def index():
     for point in data:
         print(point["keypoints"])
     return "", 201
-
 
 
 @app.route("/pose", methods=['GET', 'POST', 'OPTIONS'])
