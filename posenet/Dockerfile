@@ -34,8 +34,8 @@ RUN apt update && apt install -y apache2 gnupg
 EXPOSE 80
 EXPOSE 443
 COPY templates/*.* /var/www/html/
-RUN echo "ServerName 0.0.0.0" >> /etc/apache2/apache2.conf
-RUN service apache2 restart
+RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
+RUN service apache2 start
 
 # Get python running
 WORKDIR /pose
@@ -44,4 +44,5 @@ RUN apt install python python-pip
 RUN pip install -r requirements.txt
 RUN pip install rosdep rospkg rosinstall_generator rosinstall wstool vcstools catkin_tools catkin_pkg
 RUN rosdep update
-CMD ["python poser.py"]
+RUN chmod +x run.sh
+ENTRYPOINT ["./run.sh"]
