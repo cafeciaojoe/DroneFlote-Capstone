@@ -1,3 +1,4 @@
+#! /usr/bin/python
 from flask import Flask, render_template, json, request
 from flask_cors import CORS, cross_origin
 import rospy
