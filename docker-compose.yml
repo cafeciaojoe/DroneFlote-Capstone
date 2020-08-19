@@ -15,6 +15,8 @@ services:
       - ros-custom
     ports:
       - "9090:9090"
+    environment:
+      - ROS_MASTER_URI=http://roscore:9090
     container_name: roscore
     tty: true
 
@@ -26,7 +28,7 @@ services:
     ports:
       - "9091:9091"
     environment:
-      - OS_MASTER_URI=http://roscore:9090
+      - ROS_MASTER_URI=http://roscore:9090
     tty: true
     depends_on:
       - roscore
@@ -40,7 +42,7 @@ services:
       - "8888:80"
       - "8889:443"
     environment:
-      - OS_MASTER_URI=http://roscore:9090
+      - ROS_MASTER_URI=http://roscore:9090
     tty: true
     depends_on:
       - roscore
