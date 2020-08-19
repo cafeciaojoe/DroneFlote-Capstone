@@ -41,9 +41,12 @@ services:
     ports:
       - "8888:80"
       - "8889:443"
+      - "5000:5000"
     environment:
       - ROS_MASTER_URI=http://roscore:9090
     tty: true
+    volumes:
+    - ./share:/share
     depends_on:
       - roscore
 

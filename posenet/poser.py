@@ -2,6 +2,7 @@
 from flask import Flask, render_template, json, request
 from flask_cors import CORS, cross_origin
 import rospy
+import logging
 
 app = Flask("__main__")
 CORS(app)
@@ -13,7 +14,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 def index():
     data = request.get_json()
     for point in data:
-        print(point["keypoints"])
+        app.logger.info(str(point["keypoints"]))
     return "", 201
 
 

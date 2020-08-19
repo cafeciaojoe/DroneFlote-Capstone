@@ -37,6 +37,7 @@ RUN npm install
 RUN apt update && apt install -y apache2 gnupg
 EXPOSE 80
 EXPOSE 443
+EXPOSE 5000
 COPY templates/*.* /var/www/html/
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
 RUN service apache2 start
