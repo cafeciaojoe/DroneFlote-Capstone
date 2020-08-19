@@ -15,7 +15,10 @@ RUN locale-gen en_US en_US.UTF-8
 RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 RUN export LANG=en_US.UTF-8
 RUN apt update && apt install -y ros-melodic-desktop-full --install-recommends
-RUN apt install -y python-rosdep python-catkin-pkg python-pip python-rospkg python-dev libssl1.0-dev nodejs nodejs-dev node-gyp npm git ros-melodic-rospy
+RUN apt install -y ros-melodic-catkin python-catkin-pkg python-catkin-tools
+RUN apt install -y --install-recommends python-catkin-pkg python-catkin-pkg-modules
+RUN apt install -y python-rosdep python-pip python-rospkg python-dev libssl1.0-dev nodejs nodejs-dev node-gyp npm git \
+    ros-melodic-rospy ros-melodic-roslib
 #RUN apt update && apt install -y ros-melodic-desktop-full python3-rosdep python3-catkin-pkg python3-rospkg
 RUN rosdep init
 RUN rosdep update
