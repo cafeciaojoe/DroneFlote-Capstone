@@ -1,5 +1,12 @@
 version: "3.7"
 services:
+#  openpose:
+#    build:
+#      context: ./openpose-melodic-ros
+#    networks:
+#      - ros-custom
+#    ports:
+#      - "9090:9090"
 
   roscore:
     build:
