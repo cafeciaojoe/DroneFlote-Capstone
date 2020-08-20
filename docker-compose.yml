@@ -1,16 +1,63 @@
-version: "3.6"
+version: "3.7"
 services:
-  imagedetect:
-    context: ./posenet
-    network: ros-custom
-    container_name: imagedetect
-    ports:
-      - "9091:9090"
-
-#  roscore:
-#    context: ./roscore
-#    network: ros-custom
-#    container_name: roscore
+#  openpose:
+#    build:
+#      context: ./openpose-melodic-ros
+#    networks:
+#      - ros-custom
 #    ports:
-#    - "9092:9090"
+#      - "9090:9090"
+
+  roscore:
+    build:
+      context: ./roscore
+    networks:
+      - ros-custom
+    ports:
+      - "9090:9090"
+    environment:
+      - ROS_MASTER_URI=http://roscore:9090
+    container_name: roscore
+    tty: true
+
+  simulator:
+    build:
+      context: ./simulator
+    networks:
+      - ros-custom
+    ports:
+      - "9091:9091"
+    environment:
+      - ROS_MASTER_URI=http://roscore:9090
+    tty: true
+    depends_on:
+      - roscore
+
+  posenet:
+    build:
+      context: ./posenet
+    networks:
+      - ros-custom
+    ports:
+      - "8888:80"
+      - "8889:443"
+      - "5000:5000"
+    environment:
+      - ROS_MASTER_URI=http://roscore:9090
+    tty: true
+    volumes:
+    - ./share:/share
+    depends_on:
+      - roscore
+
+networks:
+  ros-custom:
+    name: ros-custom
+    driver: bridge
+#    ipam:
+#      driver: default
+#      config: [{
+#        subnet: 172.16.238.0/24,
+#        gateway: 172.16.238.1
+#        }]
 
