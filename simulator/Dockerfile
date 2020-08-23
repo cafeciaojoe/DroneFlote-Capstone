@@ -65,7 +65,13 @@ RUN apt-get -qq update && \
         # Required for installing dependencies
         python-rosdep \
         # Preferred build tool
-        python-catkin-tools
+        python-catkin-tools \
+        # Requirements for building CrazyS
+        ros-melodic-catkin python-catkin-pkg \
+        python-catkin-pkg-modules \
+        python-pip python-rospkg python-dev \
+        ros-melodic-rospy ros-melodic-roslib \
+        ros-melodic-cpp-common
 ENV TERM xterm
 RUN rosdep init
 RUN rosdep update
@@ -84,7 +90,10 @@ RUN apt update && apt install -y gazebo9 gazebo9-* ros-melodic-gazebo-* && apt u
 WORKDIR /simulator/src
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
 RUN git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
-#RUN git clone https://github.com/gsilano/mav_comm.git
+RUN git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
+RUN apt install -y ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control
+RUN apt install -y ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface
+RUN apt install -y ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description ros-melodic-rotors-hil-interface
 WORKDIR /simulator
 RUN rosdep update
 RUN echo "rosdep install --from-paths src/ -r -y" > rosinst.sh
