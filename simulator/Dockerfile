@@ -89,7 +89,7 @@ RUN apt update && apt install -y gazebo9 gazebo9-* ros-melodic-gazebo-* && apt u
 # Clone CrazyS
 WORKDIR /simulator/src
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
-RUN git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
+# Clone only mavcomm as it must be compiled before CrazyS
 RUN git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
 RUN apt install -y ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control
 RUN apt install -y ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface
@@ -99,7 +99,10 @@ RUN rosdep update
 RUN echo "rosdep install --from-paths src/ -r -y" > rosinst.sh
 RUN chmod +x rosinst.sh
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
-#RUN rosdep install --from-paths src/ -r
+# Clone CrazyS now MAV COMM dependencies are satisfied
+RUN git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
+RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
+RUN rosdep update
 
 # Init the workspace
 RUN catkin init
