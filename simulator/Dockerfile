@@ -38,6 +38,16 @@ RUN apt update && apt install -y gazebo9 gazebo9-* ros-melodic-gazebo-* && apt u
 WORKDIR /simulator/src
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
 
+# Copy python demo listener to workspace package
+RUN catkin_create_pkg demo_listener std_msgs rospy roscpp
+WORKDIR /simulator/src/demo_listener
+RUN mkdir python
+COPY *.* python/
+RUN chmod +x -R python
+RUN pip2 install -r python/requirements.txt
+RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
+    echo catkin_install_python\(PROGRAMS python/demo_listener.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
+
 # Clone only mavcomm as it must be compiled before CrazyS
 WORKDIR /simulator/src
 RUN git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
@@ -51,24 +61,11 @@ RUN chmod +x rosinst.sh
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
 
 # Clone CrazyS now MAV COMM dependencies are satisfied
-WORKDIR /simulator/src
 RUN git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
-
-# Copy python demo listener to workspace package
-RUN catkin_create_pkg demo_listener std_msgs rospy roscpp
-WORKDIR /simulator/src/demo_listener
-RUN mkdir python
-COPY *.* python/
-RUN chmod +x -R python
-RUN pip2 install -r python/requirements.txt
-RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
-    echo catkin_install_python\(PROGRAMS python/demo_listener.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
-
-
-# Init the workspace
-WORKDIR /simulator
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
 RUN rosdep update
+
+# Init the workspace
 RUN catkin init
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_make"
 RUN rosdep update

@@ -5,12 +5,11 @@ import json
 
 
 def callback(data):
-    for part in data.data:
-
-        for point in part:
-
-            rospy.loginfo(rospy.get_caller_id() + "eyes: %s", str(point))
-            # print(point)
+    points = json.loads(data.data)
+    # points = point.replace("u\'", "\'").replace("[", "").replace("]", "")
+    readings = points[0]
+    for point in readings:
+        rospy.loginfo(rospy.get_caller_id() + "nose: %s", readings[point])
 
 
 def listener():

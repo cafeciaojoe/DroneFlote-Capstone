@@ -20,8 +20,8 @@ def index():
         data = request.get_json()
         for point in data:
             # app.logger.info(str(point["keypoints"]))
-            rospy.loginfo(str(point["keypoints"]))
-            pub.publish(str(point["keypoints"]))
+            rospy.loginfo(json.dumps(point["keypoints"]))
+            pub.publish(json.dumps(point["keypoints"]))
             pass
         return "", 201
     else:
