@@ -1,14 +1,10 @@
-#FROM ubuntu:bionic
 FROM ros:melodic-ros-core
 
 WORKDIR /ros
 RUN apt update && apt upgrade -y
 
 # Install ros
-
 RUN apt update && apt upgrade -y && apt install -y curl gnupg2 lsb-release locales && apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-#RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list.d/ros-latest.list'
-#RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros-latest.list'
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -39,9 +35,8 @@ EXPOSE 5000
 COPY templates/*.* /var/www/html/
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
 RUN service apache2 start
-
-# Get python running
 WORKDIR /pose/src
+
 # Init catkin workspace
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
 RUN catkin_create_pkg publisher std_msgs rospy roscpp
@@ -52,13 +47,13 @@ RUN pip install rosdep rospkg rosinstall_generator rosinstall wstool vcstools ca
 COPY *.* python/
 RUN chmod +x -R python
 RUN pip2 install -r python/requirements.txt
+
 # Setup catkin package
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
     echo catkin_install_python\(PROGRAMS python/poser.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
 RUN mv python/package.xml .
 WORKDIR /pose
 RUN rosdep install --from-paths src/ -r
-#RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c rosdep install --from-paths src/ -r"
 RUN catkin init
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_make"
 RUN rosdep update

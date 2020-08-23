@@ -16,7 +16,7 @@ services:
     ports:
       - "9090:9090"
     environment:
-      - ROS_MASTER_URI=http://roscore:9090
+      - ROS_MASTER_URI=http://roscore:11311
     container_name: roscore
     tty: true
 
@@ -28,7 +28,7 @@ services:
     ports:
       - "9091:9091"
     environment:
-      - ROS_MASTER_URI=http://roscore:9090
+      - ROS_MASTER_URI=http://roscore:11311
     tty: true
     depends_on:
       - roscore
@@ -43,7 +43,7 @@ services:
       - "8889:443"
       - "5000:5000"
     environment:
-      - ROS_MASTER_URI=http://roscore:9090
+      - ROS_MASTER_URI=http://roscore:11311
     tty: true
     volumes:
     - ./share:/share
