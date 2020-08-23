@@ -66,9 +66,9 @@ RUN apt-get -qq update && \
         python-rosdep \
         # Preferred build tool
         python-catkin-tools \
-        # Requirements for building CrazyS
-        ros-melodic-catkin python-catkin-pkg \
-        python-catkin-pkg-modules \
+        # Requirements for CrazyS
+        ros-melodic-catkin python-catkin-pkg python-catkin-tools \
+        python-catkin-pkg python-catkin-pkg-modules \
         python-pip python-rospkg python-dev \
         ros-melodic-rospy ros-melodic-roslib \
         ros-melodic-cpp-common
