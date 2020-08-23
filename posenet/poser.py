@@ -14,7 +14,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 def index():
     data = request.get_json()
     for point in data:
-        app.logger.info(str(point["keypoints"]))
+        # app.logger.info(str(point["keypoints"]))
+        pass
     return "", 201
 
 
