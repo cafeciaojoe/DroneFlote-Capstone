@@ -1,12 +1,5 @@
 version: "3.7"
 services:
-#  openpose:
-#    build:
-#      context: ./openpose-melodic-ros
-#    networks:
-#      - ros-custom
-#    ports:
-#      - "9090:9090"
 
   roscore:
     build:
@@ -20,18 +13,18 @@ services:
     container_name: roscore
     tty: true
 
-  simulator:
-    build:
-      context: ./simulator
-    networks:
-      - ros-custom
-    ports:
-      - "9091:9091"
-    environment:
-      - ROS_MASTER_URI=http://roscore:9090
-    tty: true
-    depends_on:
-      - roscore
+#  simulator:
+#    build:
+#      context: ./simulator
+#    networks:
+#      - ros-custom
+#    ports:
+#      - "9091:9091"
+#    environment:
+#      - ROS_MASTER_URI=http://roscore:9090
+#    tty: true
+#    depends_on:
+#      - roscore
 
   posenet:
     build:
@@ -54,10 +47,3 @@ networks:
   ros-custom:
     name: ros-custom
     driver: bridge
-#    ipam:
-#      driver: default
-#      config: [{
-#        subnet: 172.16.238.0/24,
-#        gateway: 172.16.238.1
-#        }]
-

@@ -29,8 +29,6 @@ WORKDIR /
 RUN pip install tensorflow
 RUN git clone https://github.com/tensorflow/tfjs-models.git
 WORKDIR /tfjs-models/posenet
-#RUN npm install @tensorflow/tfjs-core @tensorflow/tfjs-converter
-#RUN npm install @tensorflow-models/posenet
 RUN npm install
 
 # Create webserver
