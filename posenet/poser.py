@@ -18,11 +18,10 @@ rospy.init_node('posenet', anonymous=True)
 def index():
     if rospy.is_shutdown() is False:
         data = request.get_json()
-        for point in data:
-            # app.logger.info(str(point["keypoints"]))
-            rospy.loginfo(json.dumps(point["keypoints"]))
-            pub.publish(json.dumps(point["keypoints"]))
-            pass
+        if type(data) is list:
+            data = data[0]
+        rospy.loginfo(json.dumps(point["keypoints"]))
+        pub.publish(json.dumps(data["keypoints"]))
         return "", 201
     else:
         return "", 410
