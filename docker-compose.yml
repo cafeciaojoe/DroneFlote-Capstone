@@ -28,13 +28,12 @@ services:
     ports:
       - "9091:9091"
     environment:
-      - DISPLAY="novnc:0"
+      - DISPLAY=novnc:0.0
       - ROS_MASTER_URI=http://roscore:11311
     tty: true
     depends_on:
       - roscore
       - novnc
-
 
   posenet:
     build:
