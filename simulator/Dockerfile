@@ -61,7 +61,9 @@ RUN chmod +x rosinst.sh
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
 
 # Clone CrazyS now MAV COMM dependencies are satisfied
+WORKDIR /simulator/src
 RUN git clone -b dev/ros-melodic https://github.com/gsilano/CrazyS.git
+WORKDIR /simulator
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c ./rosinst.sh"
 RUN rosdep update
 
