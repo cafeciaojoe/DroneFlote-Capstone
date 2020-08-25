@@ -20,7 +20,7 @@ def index():
         data = request.get_json()
         if type(data) is list:
             data = data[0]
-        rospy.loginfo(json.dumps(point["keypoints"]))
+        rospy.loginfo(json.dumps(data["keypoints"]))
         pub.publish(json.dumps(data["keypoints"]))
         return "", 201
     else:

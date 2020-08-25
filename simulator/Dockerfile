@@ -54,7 +54,7 @@ RUN git clone -b med18_gazebo9 https://github.com/gsilano/mav_comm.git
 RUN apt install -y ros-melodic-rqt-rotors ros-melodic-rotors-comm ros-melodic-mav-msgs ros-melodic-rotors-control \
                    ros-melodic-rotors-gazebo ros-melodic-rotors-evaluation ros-melodic-rotors-joy-interface \
                    ros-melodic-rotors-gazebo-plugins ros-melodic-mav-planning-msgs ros-melodic-rotors-description \
-                   ros-melodic-rotors-hil-interface
+                   ros-melodic-rotors-hil-interface ros-melodic-octomap ros-melodic-octomap-*
 WORKDIR /simulator
 RUN rosdep update
 RUN echo "rosdep install --from-paths src/ -r -y" > rosinst.sh
