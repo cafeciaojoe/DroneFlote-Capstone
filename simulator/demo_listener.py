@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import math
+
 import rospy
 from std_msgs.msg import String
 import json
@@ -25,30 +27,47 @@ PART_MAP = {
 }
 
 
-def convert_to_dictionary(data):
-    pose_dict = {}
-    for i in range(0, len(data)):
-        pose_dict[PART_MAP[i]] = {
-            # "part": data[i]["part"],
-            "position": (data[i]["position"]["x"], data[i]["position"]["y"]),
-            "score": data[i]["score"]
-        }
-    return pose_dict
+class ListenerNode:
 
+    ANGLE_THRESHOLD = 15
+    previous_angle = None
 
-def callback(data):
-    points_data = json.loads(data.data)
-    keypoints = convert_to_dictionary(points_data)
-    rospy.loginfo(rospy.get_caller_id() + "nose: %s", keypoints)
+    @staticmethod
+    def convert_to_dictionary(data):
+        pose_dict = {}
+        for i in range(0, len(data)):
+            pose_dict[PART_MAP[i]] = {
+                # "part": data[i]["part"],
+                "position": (data[i]["position"]["x"], data[i]["position"]["y"]),
+                "score": data[i]["score"]
+            }
+        return pose_dict
 
+    def callback(self, data):
+        points_data = json.loads(data.data)
+        keypoints = ListenerNode.convert_to_dictionary(points_data)
+        angle_horizontal = ListenerNode.get_angle(keypoints["rightShoulder"], keypoints["rightWrist"])
+        current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
+        if self.previous_angle is None:
+            self.previous_angle = not current_angle
+        if self.previous_angle != current_angle:
+            rospy.loginfo(rospy.get_caller_id() + " Over %s degrees?: %s", self.ANGLE_THRESHOLD, current_angle)
+        self.previous_angle = current_angle
 
-def listener():
-    rospy.init_node('demo_listener', anonymous=True)
-    rospy.Subscriber("pose_data", String, callback)
+    def listener(self):
+        rospy.init_node('demo_listener', anonymous=True)
+        rospy.Subscriber("pose_data", String, self.callback)
 
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+        # spin() simply keeps python from exiting until this node is stopped
+        rospy.spin()
+
+    @staticmethod
+    def get_angle(base_point, outer_point):
+        x = outer_point[0] - base_point[0]
+        y = outer_point[1] - base_point[1]
+        return math.degrees(math.tan(x / y))
 
 
 if __name__ == '__main__':
-    listener()
+    node = ListenerNode()
+    node.listener()
