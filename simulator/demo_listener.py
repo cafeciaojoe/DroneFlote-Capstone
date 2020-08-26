@@ -28,9 +28,11 @@ PART_MAP = {
 
 
 class ListenerNode:
-
     ANGLE_THRESHOLD = 15
     previous_angle = None
+    POSITION_BASE = "rightShoulder"
+    POSITION_OUTER = "rightWrist"
+    MINIMUM_CONFIDENCE = 0.5
 
     @staticmethod
     def convert_to_dictionary(data):
@@ -46,13 +48,19 @@ class ListenerNode:
     def callback(self, data):
         points_data = json.loads(data.data)
         keypoints = ListenerNode.convert_to_dictionary(points_data)
-        angle_horizontal = ListenerNode.get_angle(keypoints["rightShoulder"], keypoints["rightWrist"])
-        current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
-        if self.previous_angle is None:
-            self.previous_angle = not current_angle
-        if self.previous_angle != current_angle:
-            rospy.loginfo(rospy.get_caller_id() + " Over %s degrees?: %s", self.ANGLE_THRESHOLD, current_angle)
-        self.previous_angle = current_angle
+        if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
+
+            angle_horizontal = ListenerNode.get_angle(keypoints[self.POSITION_BASE]["position"],
+                                                      keypoints[self.POSITION_OUTER]["position"])
+            current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
+            if self.previous_angle is None:
+                self.previous_angle = not current_angle
+            if self.previous_angle != current_angle:
+                rospy.loginfo(rospy.get_caller_id() + " Over %s degrees?: %s | Confidence = %s:%s | Angle = %s",
+                              self.ANGLE_THRESHOLD, current_angle, keypoints[self.POSITION_BASE]["score"],
+                              keypoints[self.POSITION_OUTER]["score"], angle_horizontal)
+            self.previous_angle = current_angle
 
     def listener(self):
         rospy.init_node('demo_listener', anonymous=True)
@@ -63,9 +71,16 @@ class ListenerNode:
 
     @staticmethod
     def get_angle(base_point, outer_point):
-        x = outer_point[0] - base_point[0]
-        y = outer_point[1] - base_point[1]
-        return math.degrees(math.tan(x / y))
+        if outer_point[0] > base_point[0]:
+            x = outer_point[0] - base_point[0]
+        else:
+            x = base_point[0] - outer_point[0]
+        if outer_point[1] > base_point[1]:
+            y = outer_point[1] - base_point[1]
+        else:
+            y = base_point[1] - outer_point[1]
+
+        return math.degrees(math.atan(y / x))
 
 
 if __name__ == '__main__':

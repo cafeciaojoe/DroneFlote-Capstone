@@ -65,7 +65,7 @@ networks:
   ros-custom:
     name: ros-custom
     driver: bridge
-    external: True
+#    external: True
 #    ipam:
 #      driver: default
 #      config: [{
