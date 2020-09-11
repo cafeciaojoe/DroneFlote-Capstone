@@ -12,7 +12,9 @@ RUN apt-get -qq update && \
         # Required for installing dependencies
         python-rosdep \
         # Preferred build tool
-        python-catkin-tools
+        python-catkin-tools \
+        # For monitoring and publishing topics during testing
+        ros-melodic-rqt-common-plugins ros-melodic-rqt
 ENV TERM xterm
 RUN rosdep init
 RUN rosdep update
