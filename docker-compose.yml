@@ -20,6 +20,19 @@ services:
     container_name: roscore
     tty: true
 
+  parser:
+    build:
+      context: ./pose_parser
+    networks:
+      - ros-custom
+#    ports:
+#      - "9091:9091"
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311
+    tty: true
+    depends_on:
+      - roscore
+
   simulator:
     build:
       context: ./simulator
