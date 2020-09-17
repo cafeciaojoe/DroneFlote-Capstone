@@ -25,7 +25,12 @@ RUN apt-get -qq update && \
         python-catkin-pkg python-catkin-pkg-modules \
         python-pip python-rospkg python-dev \
         ros-melodic-rospy ros-melodic-roslib \
-        ros-melodic-cpp-common
+        ros-melodic-cpp-common \
+        # Messaging requirements for imports
+        # ros-melodic-trajectory-msgs ros-melodic-geometry-msgs python-trajectory-msgs python-geometry-msgs
+        ros-melodic-common-msgs
+
+
 
 RUN rosdep init
 RUN rosdep update
@@ -34,17 +39,25 @@ RUN rosdep update
 #RUN apt update && apt upgrade -y
 
 WORKDIR /parser/src
+# Clone standard msgs extras
+
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
 
 # Copy python demo listener to workspace package
-RUN catkin_create_pkg demo_listener std_msgs rospy roscpp
-WORKDIR /parser/src/demo_listener
-RUN mkdir python
-COPY *.* python/
+RUN catkin_create_pkg parser std_msgs rospy roscpp trajectory_msgs geometry_msgs
+WORKDIR /parser/src/parser/python
+#RUN mkdir python
+#COPY *.* python/
+COPY *.* ./
+#RUN git clone -b jade-devel https://github.com/ros/common_msgs.git
+#RUN cp -r common_msgs/* ${CATKIN_PACKAGE_BIN_DESTINATION}
+
+WORKDIR /parser/src/parser
+
 RUN chmod +x -R python
 RUN pip2 install -r python/requirements.txt
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
-    echo catkin_install_python\(PROGRAMS python/demo_listener.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
+    echo catkin_install_python\(PROGRAMS python/parser.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
 
 WORKDIR /parser
 
@@ -60,7 +73,7 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_make
 RUN rosdep update
 
 # Move script to local dir
-RUN mv /parser/src/demo_listener/python/pubsubdemo.sh .
+RUN mv /parser/src/parser/python/start.sh .
 
 # Demo for pubsub
-ENTRYPOINT ["./pubsubdemo.sh"]
+ENTRYPOINT ["./start.sh"]

@@ -2,7 +2,9 @@
 import math
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Header
+from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
+from geometry_msgs.msg import Transform, Twist
 import json
 
 # Mapping of parts to array as per posenet keypoints.
@@ -26,13 +28,19 @@ PART_MAP = {
     16: "rightAnkle"
 }
 
+pub = rospy.Publisher('crazyflie2/command/trajectory', MultiDOFJointTrajectory, queue_size=20)
 
-class ListenerNode:
+
+class PoseParserNode:
+
     ANGLE_THRESHOLD = 15
     previous_angle = None
     POSITION_BASE = "rightShoulder"
     POSITION_OUTER = "rightWrist"
     MINIMUM_CONFIDENCE = 0.5
+
+    def __init__(self):
+        rospy.init_node('parser_node', anonymous=True)
 
     @staticmethod
     def convert_to_dictionary(data):
@@ -47,11 +55,11 @@ class ListenerNode:
 
     def callback(self, data):
         points_data = json.loads(data.data)
-        keypoints = ListenerNode.convert_to_dictionary(points_data)
+        keypoints = PoseParserNode.convert_to_dictionary(points_data)
         if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
                 keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
 
-            angle_horizontal = ListenerNode.get_angle(keypoints[self.POSITION_BASE]["position"],
+            angle_horizontal = PoseParserNode.get_angle(keypoints[self.POSITION_BASE]["position"],
                                                       keypoints[self.POSITION_OUTER]["position"])
             current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
             if self.previous_angle is None:
@@ -63,11 +71,59 @@ class ListenerNode:
             self.previous_angle = current_angle
 
     def listener(self):
-        rospy.init_node('demo_listener', anonymous=True)
+        # rospy.init_node('demo_listener', anonymous=True)
         rospy.Subscriber("pose_data", String, self.callback)
 
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
+
+    def publisher(self, x, y, z):
+        trajectory = MultiDOFJointTrajectory()
+        trajectory.header = Header()
+        trajectory.header.stamp = rospy.Time()
+        trajectory.header.frame_id = ''
+        trajectory.joint_names = ["base_link"]
+        point = MultiDOFJointTrajectoryPoint([self.create_point(x, y, z)], [self.create_velocity(0, 0, 0)],
+                                             [self.create_acceleration(0, 0, 0)], rospy.Time(1))
+        trajectory.points.append(point)
+        pub.publish(trajectory)
+
+    def create_point(self, x, y, z):
+        transformation = Transform()
+        transformation.translation.x = x
+        transformation.translation.y = y
+        transformation.translation.z = z
+        transformation.rotation.x = 0
+        transformation.rotation.y = 0
+        transformation.rotation.z = 0
+        return transformation
+
+    def create_velocity(self, x, y, z):
+        velocity = Twist()
+        velocity.linear.x = x
+        velocity.linear.y = y
+        velocity.linear.z = z
+        velocity.angular.x = 0
+        velocity.angular.y = 0
+        velocity.angular.z = 0
+        return velocity
+
+    def create_acceleration(self, x, y, z):
+        acceleration = Twist()
+        acceleration.linear.x = x
+        acceleration.linear.y = y
+        acceleration.linear.z = z
+        acceleration.angular.x = 0
+        acceleration.angular.y = 0
+        acceleration.angular.z = 0
+        return acceleration
+
+    def test_publish(self):
+        while True:
+            rospy.sleep(10)
+            self.publisher(1, 1, 1)
+            rospy.sleep(10)
+            self.publisher(2, 2, 2)
 
     @staticmethod
     def get_angle(base_point, outer_point):
@@ -84,5 +140,6 @@ class ListenerNode:
 
 
 if __name__ == '__main__':
-    node = ListenerNode()
-    node.listener()
+    node = PoseParserNode()
+    # node.listener()
+    node.test_publish()
