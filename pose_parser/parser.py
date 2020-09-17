@@ -32,12 +32,12 @@ pub = rospy.Publisher('crazyflie2/command/trajectory', MultiDOFJointTrajectory, 
 
 
 class PoseParserNode:
-
     ANGLE_THRESHOLD = 15
     previous_angle = None
     POSITION_BASE = "rightShoulder"
     POSITION_OUTER = "rightWrist"
-    MINIMUM_CONFIDENCE = 0.5
+    MINIMUM_CONFIDENCE = 0.7
+    high = None
 
     def __init__(self):
         rospy.init_node('parser_node', anonymous=True)
@@ -56,11 +56,31 @@ class PoseParserNode:
     def callback(self, data):
         points_data = json.loads(data.data)
         keypoints = PoseParserNode.convert_to_dictionary(points_data)
+        self.simulation_pose_demo(keypoints)
+
+    def simulation_pose_demo(self, keypoints):
+        if keypoints["nose"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["rightKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["leftKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["rightWrist"]["score"] > self.MINIMUM_CONFIDENCE:
+            midpoint_y = keypoints["nose"]["position"]["y"] - \
+                         ((keypoints["leftKnee"]["position"]["y"] + keypoints["rightKnee"]["position"]["y"]) / 2)
+            above = True if keypoints["rightWrist"]["position"]["y"] > midpoint_y else False
+            if self.high is None:
+                self.high = not above
+            if self.high != above:
+                if above:
+                    self.publisher(0, 0, 3)
+                else:
+                    self.publisher(0, 0, 1)
+            self.high = above
+
+    def positional_demo(self, keypoints):
         if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
                 keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
 
             angle_horizontal = PoseParserNode.get_angle(keypoints[self.POSITION_BASE]["position"],
-                                                      keypoints[self.POSITION_OUTER]["position"])
+                                                        keypoints[self.POSITION_OUTER]["position"])
             current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
             if self.previous_angle is None:
                 self.previous_angle = not current_angle
@@ -71,7 +91,6 @@ class PoseParserNode:
             self.previous_angle = current_angle
 
     def listener(self):
-        # rospy.init_node('demo_listener', anonymous=True)
         rospy.Subscriber("pose_data", String, self.callback)
 
         # spin() simply keeps python from exiting until this node is stopped
@@ -84,7 +103,7 @@ class PoseParserNode:
         trajectory.header.frame_id = ''
         trajectory.joint_names = ["base_link"]
         point = MultiDOFJointTrajectoryPoint([self.create_point(x, y, z)], [self.create_velocity(0, 0, 0)],
-                                             [self.create_acceleration(0, 0, 0)], rospy.Time(1))
+                                             [self.create_acceleration(0, 0, 0)], rospy.Time(3))
         trajectory.points.append(point)
         pub.publish(trajectory)
 
@@ -96,6 +115,7 @@ class PoseParserNode:
         transformation.rotation.x = 0
         transformation.rotation.y = 0
         transformation.rotation.z = 0
+        transformation.rotation.w = 0
         return transformation
 
     def create_velocity(self, x, y, z):
@@ -121,9 +141,9 @@ class PoseParserNode:
     def test_publish(self):
         while True:
             rospy.sleep(10)
-            self.publisher(1, 1, 1)
+            self.publisher(0, 0, 1)
             rospy.sleep(10)
-            self.publisher(2, 2, 2)
+            self.publisher(0, 0, 1)
 
     @staticmethod
     def get_angle(base_point, outer_point):
@@ -141,5 +161,5 @@ class PoseParserNode:
 
 if __name__ == '__main__':
     node = PoseParserNode()
-    # node.listener()
-    node.test_publish()
+    node.listener()
+    # node.test_publish()
