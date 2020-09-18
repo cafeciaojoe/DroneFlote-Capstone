@@ -36,7 +36,7 @@ class PoseParserNode:
     previous_angle = None
     POSITION_BASE = "rightShoulder"
     POSITION_OUTER = "rightWrist"
-    MINIMUM_CONFIDENCE = 0.7
+    MINIMUM_CONFIDENCE = 0.5
     high = None
 
     def __init__(self):
@@ -48,8 +48,8 @@ class PoseParserNode:
         for i in range(0, len(data)):
             pose_dict[PART_MAP[i]] = {
                 # "part": data[i]["part"],
-                "position": (data[i]["position"]["x"], data[i]["position"]["y"]),
-                "score": data[i]["score"]
+                "position": (float(data[i]["position"]["x"]), float(data[i]["position"]["y"])),
+                "score": float(data[i]["score"])
             }
         return pose_dict
 
@@ -63,17 +63,36 @@ class PoseParserNode:
                 keypoints["rightKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
                 keypoints["leftKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
                 keypoints["rightWrist"]["score"] > self.MINIMUM_CONFIDENCE:
-            midpoint_y = keypoints["nose"]["position"]["y"] - \
-                         ((keypoints["leftKnee"]["position"]["y"] + keypoints["rightKnee"]["position"]["y"]) / 2)
-            above = True if keypoints["rightWrist"]["position"]["y"] > midpoint_y else False
+            midpoint_y = ((keypoints["leftKnee"]["position"][1] + keypoints["rightKnee"]["position"][1]) / 2) - \
+                         keypoints["nose"]["position"][1]
+            # Y axis is inverted, assign bool accordingly, Lower is larger, Higher is smaller
+            above = False if keypoints["rightWrist"]["position"][1] > midpoint_y else True
+            rospy.loginfo("High = %s, midpoint = %s" % (above, midpoint_y))
             if self.high is None:
                 self.high = not above
             if self.high != above:
+                rospy.loginfo("Switch hover mode")
                 if above:
                     self.publisher(0, 0, 3)
                 else:
                     self.publisher(0, 0, 1)
             self.high = above
+        else:
+            rospy.loginfo("nose = %s, %s, knee1 = %s, %s, knee2 = %s, %s, wrist = %s, %s" % (keypoints["nose"]["score"],
+                                                                                             keypoints["nose"][
+                                                                                                 "position"],
+                                                                                             keypoints["rightKnee"][
+                                                                                                 "score"],
+                                                                                             keypoints["rightKnee"][
+                                                                                                 "position"],
+                                                                                             keypoints["leftKnee"][
+                                                                                                 "score"],
+                                                                                             keypoints["leftKnee"][
+                                                                                                 "position"],
+                                                                                             keypoints["rightWrist"][
+                                                                                                 "score"],
+                                                                                             keypoints["rightWrist"][
+                                                                                                 "position"]))
 
     def positional_demo(self, keypoints):
         if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
