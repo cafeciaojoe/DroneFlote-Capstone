@@ -53,8 +53,6 @@ services:
     environment:
       - ROS_MASTER_URI=http://roscore:11311
     tty: true
-    volumes:
-    - ./share:/share
     depends_on:
       - roscore
 

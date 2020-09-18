@@ -35,6 +35,14 @@ RUN apt-get -qq update && \
 RUN rosdep init
 RUN rosdep update
 
+# Web server setup for pose interface TODO --- Late milestone interface to python, use flask webserver or apache?
+#RUN apt update && apt install -y apache2 gnupg
+#EXPOSE 80
+#EXPOSE 443
+#EXPOSE 9999
+#RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
+# TODO - serve basic page to alter pose metrics
+
 # Install reqs
 #RUN apt update && apt upgrade -y
 
@@ -75,5 +83,5 @@ RUN rosdep update
 # Move script to local dir
 RUN mv /parser/src/parser/python/start.sh .
 
-# Demo for pubsub
+# Start script to run package
 ENTRYPOINT ["./start.sh"]
