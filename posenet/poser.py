@@ -1,4 +1,6 @@
 #! /usr/bin/python
+import time
+
 from flask import Flask, render_template, json, request
 from flask_cors import CORS, cross_origin
 import logging
@@ -17,6 +19,7 @@ rospy.init_node('posenet', anonymous=True)
 @cross_origin()
 def index():
     if rospy.is_shutdown() is False:
+        time.sleep(0.1)
         data = request.get_json()
         if type(data) is list:
             data = data[0]
@@ -33,6 +36,6 @@ def coco():
 
 
 try:
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", debug=False)
 except rospy.ROSInterruptException:
     pass
