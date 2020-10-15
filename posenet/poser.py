@@ -6,7 +6,9 @@ from flask_cors import CORS, cross_origin
 import logging
 import rospy
 from std_msgs.msg import String
-
+"""
+Runs a simple Flask server for communication between Posenet and ROS
+"""
 
 app = Flask("__main__")
 CORS(app)
@@ -18,6 +20,11 @@ rospy.init_node('posenet', anonymous=True)
 @app.route("/", methods=['GET', 'POST', 'OPTIONS'])
 @cross_origin()
 def index():
+    """
+    Contact point for Posenet to send data to.
+    Publishes the data to a publish topic for Pose Parser Node.
+
+    """
     if rospy.is_shutdown() is False:
         time.sleep(0.1)
         data = request.get_json()
@@ -34,7 +41,7 @@ def index():
 def coco():
     print(request.get_json(force=True))
 
-
+# Start server.
 try:
     app.run(host="0.0.0.0", debug=False)
 except rospy.ROSInterruptException:
