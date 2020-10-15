@@ -122,6 +122,13 @@ One of these containers holds the pose recognition over camera application on a 
 http://localhost:8888/
 ```
 
+***Alternative Deployment using dockerhub for prebuilt images.***
+
+>Download the dockerhub-docker-compose.yml file and run docker-compose.
+
+```console
+$ docker-compose -f dockerhub-docker-compose.yml up -d
+```
 
 There are two options to select from here. 
 The camera demo will use a live feed from your connected camera to map key points to coordinates.
