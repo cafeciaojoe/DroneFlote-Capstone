@@ -21,11 +21,12 @@ Demo
 
 Deployment
 -----------
-**Installation requirements**
+Installation requirements
+--------------------------
 
 Since we have built this project with the aim to separate each of its features for ease of deployment, dockers and containers are the main parts of the running system. I will cover how to install Docker first.
 
-***Git***
+**Git**
 
 This project resides on github where you will find all the relevant files required to deploy DroneFlote. As such we need to download and install git so we can retrieve a copy remotely to deploy.
 
@@ -43,6 +44,7 @@ On linux, installing git from your package manager is more than enough.
 Docker is a solution for creating containers to house applications or parts therein to ease development and deployment, with containers being a low cost solution to deploying individual environments or operating systems as opposed to virtual machines.
 
 ***Windows and Mac***
+
 From what I understand, the installation for both systems is somewhat similar but this will guide you through setting it up on windows specifically.
 
 1. First we need to install docker. The current version from windows can be downloaded from the page:
