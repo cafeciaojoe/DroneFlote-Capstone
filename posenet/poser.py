@@ -39,6 +39,10 @@ def index():
 
 @app.route("/pose", methods=['GET', 'POST', 'OPTIONS'])
 def coco():
+    """
+    Initial test functionality from posenet.
+
+    """
     print(request.get_json(force=True))
 
 # Start server.

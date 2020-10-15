@@ -128,3 +128,5 @@ dmypy.json
 reqs/
 
 posenet/node/
+/crazyflie/
+/share/
