@@ -78,8 +78,6 @@ Provided you are not updating anything and have already completed these first tw
 
 If you do download an updated version you will have to build it again before you run it.
 
-***Get the repository***
-
 First open up a terminal window or powershell window if you’re on windows and navigate to a directory you would like the source code to live.
 
 For windows users, the easiest way to do this is to open the file explorer and click through to the directory you choose, then click on the address bar (shown below), delete the text, type “powershell” without quotes and hit enter. This opens the powershell in the directory you were in.
