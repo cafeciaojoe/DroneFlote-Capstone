@@ -1,7 +1,8 @@
 DroneFlote-Capstone
 ==============================================================
 
-#DroneFlote
+DroneFlote
+----------
 
 The DroneFlote project is a parallel extension of previous work on the Drone Chi project by PHD Candidate Joseph La Delfa which designed an interactive human-drone interface with concepts taken from Tai-Chi and backed by motion capture.
 
@@ -13,17 +14,18 @@ Due to the impact of COVID we were forced to move to a simulated environment rat
 
 The final product shall be set of containers which allow a user to access a pose recognition interface through a web browser and view a real time simulation of a CrazyFlie drone as it reacts to the users actions recorded through their attached camera.
 
-#Demo
+Demo
+------------
 
 [![DroneFlote Base Demo](https://img.youtube.com/vi/n9M-YfXLTYI/0.jpg)](https://youtu.be/n9M-YfXLTYI)
 
-#Deployment
-
-##Installation requirements
+Deployment
+-----------
+**Installation requirements**
 
 Since we have built this project with the aim to separate each of its features for ease of deployment, dockers and containers are the main parts of the running system. I will cover how to install Docker first.
 
-###Git
+***Git***
 
 This project resides on github where you will find all the relevant files required to deploy DroneFlote. As such we need to download and install git so we can retrieve a copy remotely to deploy.
 
@@ -36,11 +38,11 @@ This is the only change you are required to make during installation of git. All
 
 On linux, installing git from your package manager is more than enough.
 
-###Docker and Compose
+***Docker and Compose***
 
 Docker is a solution for creating containers to house applications or parts therein to ease development and deployment, with containers being a low cost solution to deploying individual environments or operating systems as opposed to virtual machines.
 
-####Windows and Mac
+***Windows and Mac***
 From what I understand, the installation for both systems is somewhat similar but this will guide you through setting it up on windows specifically.
 
 1. First we need to install docker. The current version from windows can be downloaded from the page:
@@ -57,7 +59,7 @@ https://docs.microsoft.com/en-us/windows/wsl/install-win10
 
 1. Luckily Docker-Compose comes with Docker desktop so we can stop here.
 
-####Linux
+***Linux***
 
 Both docker and compose can be either installed via the package manager or manually for many versions of linux.
 
@@ -66,7 +68,7 @@ https://docs.docker.com/engine/install/
 
 The same follows for docker-compose.
 
-##Building
+**Building**
 
 This is a two part process. First we need to get the project code, then build it into containers before we can then deploy the project as a whole.
 
@@ -74,7 +76,7 @@ Provided you are not updating anything and have already completed these first tw
 
 If you do download an updated version you will have to build it again before you run it.
 
-###Get the repository
+***Get the repository***
 
 First open up a terminal window or powershell window if you’re on windows and navigate to a directory you would like the source code to live.
 
@@ -97,7 +99,8 @@ $ docker-compose build
 ```
 *Note: The compose file simplifies the build process extensively from a user perspective but it can take quite some time so let it finish building before proceeding.*
 
-##Live Deployment
+Live Deployment
+--------------
 Making use of the docker compose feature greatly uncomplicates deployment and running of all the involved containers.While each container can be run individually we can deploy the whole project from docker compose.
 
 >To deploy and run the project, once it has finished building, simply enter this command in the terminal:
@@ -130,7 +133,8 @@ http://localhost:8080/vnc.html
 ```
 This container simply displays the running simulation in real time through the web browser.
 
-#External Dependencies
+External Dependencies
+-------------------
 
 This project utilizes packages and modules from several other independent projects such as; Tensorflow and posenet for image and pose detection. 
 
