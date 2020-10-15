@@ -2,6 +2,7 @@ DroneFlote-Capstone
 ==============================================================
 
 #DroneFlote
+
 The DroneFlote project is a parallel extension of previous work on the Drone Chi project by PHD Candidate Joseph La Delfa which designed an interactive human-drone interface with concepts taken from Tai-Chi and backed by motion capture.
 
 The goal of DroneFlote was to move to an interaction system using live video and the concept of pose recognition whereby the movement and location of specific key points on a person directly impact the way a drone responds in real time and to remove the need for physical controllers.
@@ -13,6 +14,7 @@ Due to the impact of COVID we were forced to move to a simulated environment rat
 The final product shall be set of containers which allow a user to access a pose recognition interface through a web browser and view a real time simulation of a CrazyFlie drone as it reacts to the users actions recorded through their attached camera.
 
 #Demo
+
 [![DroneFlote Base Demo](https://img.youtube.com/vi/n9M-YfXLTYI/0.jpg)](https://youtu.be/n9M-YfXLTYI)
 
 #Deployment
@@ -22,6 +24,7 @@ The final product shall be set of containers which allow a user to access a pose
 Since we have built this project with the aim to separate each of its features for ease of deployment, dockers and containers are the main parts of the running system. I will cover how to install Docker first.
 
 ###Git
+
 This project resides on github where you will find all the relevant files required to deploy DroneFlote. As such we need to download and install git so we can retrieve a copy remotely to deploy.
 
 On Windows we need to install git gui, which can be downloaded and installed here:
@@ -34,6 +37,7 @@ This is the only change you are required to make during installation of git. All
 On linux, installing git from your package manager is more than enough.
 
 ###Docker and Compose
+
 Docker is a solution for creating containers to house applications or parts therein to ease development and deployment, with containers being a low cost solution to deploying individual environments or operating systems as opposed to virtual machines.
 
 ####Windows and Mac
@@ -54,6 +58,7 @@ https://docs.microsoft.com/en-us/windows/wsl/install-win10
 1. Luckily Docker-Compose comes with Docker desktop so we can stop here.
 
 ####Linux
+
 Both docker and compose can be either installed via the package manager or manually for many versions of linux.
 
 For ease of use I suggest you either install from the package manager or follow the instructions on dockers website:
@@ -62,6 +67,7 @@ https://docs.docker.com/engine/install/
 The same follows for docker-compose.
 
 ##Building
+
 This is a two part process. First we need to get the project code, then build it into containers before we can then deploy the project as a whole.
 
 Provided you are not updating anything and have already completed these first two steps, to deploy again we need to follow the deployment instructions.
@@ -125,6 +131,7 @@ http://localhost:8080/vnc.html
 This container simply displays the running simulation in real time through the web browser.
 
 #External Dependencies
+
 This project utilizes packages and modules from several other independent projects such as; Tensorflow and posenet for image and pose detection. 
 
 1. Docker and docker-compose for containerization, deployment and isolating individual components for cohesion.
