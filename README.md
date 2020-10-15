@@ -114,20 +114,21 @@ $ docker-compose up -d
 ```console
 $ docker-compose down
 ```
-
-The project contains several docker images that will all run and communicate with each other.
-
-One of these containers holds the pose recognition over camera application on a web server accessible by going to the following address:
-```text
-http://localhost:8888/
-```
-
 ***Alternative Deployment using dockerhub for prebuilt images.***
 
 >Download the dockerhub-docker-compose.yml file and run docker-compose.
 
 ```console
 $ docker-compose -f dockerhub-docker-compose.yml up -d
+```
+
+**Accessing the UI**
+
+The project contains several docker images that will all run and communicate with each other.
+
+One of these containers holds the pose recognition over camera application on a web server accessible by going to the following address:
+```text
+http://localhost:8888/
 ```
 
 There are two options to select from here. 
