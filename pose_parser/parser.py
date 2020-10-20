@@ -6,6 +6,8 @@ from std_msgs.msg import String, Header
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Transform, Twist
 import json
+import numpy as np
+
 
 # Mapping of parts to array as per posenet keypoints.
 PART_MAP = {
@@ -262,6 +264,82 @@ class PoseParserNode:
             y = base_point[1] - outer_point[1]
 
         return math.degrees(math.atan(y / x))
+
+
+class PoseMetrics:
+
+    DEFAULT_MIDPOINT_1 = "leftWrist"
+    DEFAULT_MIDPOINT_2 = "rightWrist"
+    DEFAULT_HISTORY_LENGTH = 10
+
+    def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
+        self.history_length = history_length
+        self.history = [{}]
+        for point_name in PART_MAP:
+            self.history[point_name] = []
+
+
+    @staticmethod
+    def midpoint(keypoints, point_1_name=DEFAULT_MIDPOINT_1, point_2_name=DEFAULT_MIDPOINT_2):
+        """
+        Finds the middle point between 2 x,y locations. Default points are left and right wrists.
+
+        Args:
+            keypoints(dict): A dictionary of all pose keypoints.
+            point_1_name(str): Name of keypoint 1 to use in metric.
+            point_2_name(str): Name of keypoint 2 to use in metric.
+
+        Returns:
+            tuple[float, float, float]: The midpoint x,y given two points and a score of between 0-1 based on proximity
+                to left and right hand respectively.
+        """
+        point_1 = keypoints[point_1_name]["position"]
+        point_2 = keypoints[point_2_name]["position"]
+        x_diff = abs(point_1[0] - point_2[0])
+        y_diff = abs(point_1[1] - point_2[1])
+        midpoint_x = min(point_1[0], point_2[0]) - (x_diff / 2)
+        midpoint_y = min(point_1[1], point_2[1]) - (y_diff / 2)
+        proximity_x = (midpoint_x - min(point_1[0], point_2[0])) / x_diff
+        proximity_y = (midpoint_y - min(point_1[1], point_2[1])) / x_diff
+        return midpoint_x, midpoint_y, (proximity_x + proximity_y) / 2
+
+    @staticmethod
+    def centroid(keypoints, point_list=None):
+        """
+        Returns the mean x,y coordinates as a midpoint from a list of specified point names.
+        Defaults to entire part map.
+
+        Args:
+            keypoints(dict): A dictionary of all pose keypoints.
+            point_list(list[str]): A list of keypoint position names present in the part map.
+
+        Returns:
+
+        """
+        if point_list is None:
+            point_list = PART_MAP.values()
+        x_list = []
+        y_list = []
+        for point in point_list:
+            if point in PART_MAP.values():
+                x_list.append(keypoints[point][0])
+                y_list.append(keypoints[point][1])
+        return np.mean(x_list), np.mean(y_list)
+
+    def speed_of_points(self, keypoints, point_list=None):
+        if point_list is None:
+            point_list = PART_MAP.values()
+        for point in keypoints:
+            if point in PART_MAP.values():
+
+
+    metric_list = {
+        "offset_midpoints": midpoint,
+        "centroid": centroid,
+        "speed_of_hands": speed_of_hands
+    }
+
+
 
 
 if __name__ == '__main__':
