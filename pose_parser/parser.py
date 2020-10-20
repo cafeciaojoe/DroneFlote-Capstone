@@ -28,14 +28,14 @@ PART_MAP = {
     14: "rightKnee",
     15: "leftAnkle",
     16: "rightAnkle"
-}
+}  # A 'timestamp' field is added to dictionary when parsed.
 
 pub = rospy.Publisher('crazyflie2/command/trajectory', MultiDOFJointTrajectory, queue_size=20)
 
 
 class PoseParserNode:
     """
-    ROSpy Node for parsing data from posenet.
+    ROSpy Node for parsing data from posenet. Adds timestamp to notate when message was received.
     """
     ANGLE_THRESHOLD = 15
     previous_angle = None
@@ -45,6 +45,7 @@ class PoseParserNode:
     high = None
 
     def __init__(self):
+        self.metrics = PoseMetrics()
         rospy.init_node('parser_node', anonymous=True)
 
     @staticmethod
@@ -66,6 +67,7 @@ class PoseParserNode:
                 "position": (float(data[i]["position"]["x"]), float(data[i]["position"]["y"])),
                 "score": float(data[i]["score"])
             }
+        pose_dict["timestamp"] = rospy.Time.now()
         return pose_dict
 
     def callback(self, data):
@@ -143,7 +145,7 @@ class PoseParserNode:
         if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
                 keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
 
-            angle_horizontal = PoseParserNode.get_angle(keypoints[self.POSITION_BASE]["position"],
+            angle_horizontal = PoseMetrics.get_angle(keypoints[self.POSITION_BASE]["position"],
                                                         keypoints[self.POSITION_OUTER]["position"])
             current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
             if self.previous_angle is None:
@@ -242,35 +244,14 @@ class PoseParserNode:
             rospy.sleep(10)
             self.publisher(0, 0, 1)
 
-    @staticmethod
-    def get_angle(base_point, outer_point):
-        """
-        Helper method for calculating angle between two points.
-
-        Args:
-            base_point(tuple[float, float]): First point
-            outer_point(tuple[float, float]): Second point
-
-        Returns:
-
-        """
-        if outer_point[0] > base_point[0]:
-            x = outer_point[0] - base_point[0]
-        else:
-            x = base_point[0] - outer_point[0]
-        if outer_point[1] > base_point[1]:
-            y = outer_point[1] - base_point[1]
-        else:
-            y = base_point[1] - outer_point[1]
-
-        return math.degrees(math.atan(y / x))
-
 
 class PoseMetrics:
-
-    DEFAULT_MIDPOINT_1 = "leftWrist"
-    DEFAULT_MIDPOINT_2 = "rightWrist"
-    DEFAULT_HISTORY_LENGTH = 10
+    """
+    Container class for pose metrics.
+    """
+    DEFAULT_FOCUS_POINT_1 = "leftWrist"
+    DEFAULT_FOCUS_POINT_2 = "rightWrist"
+    DEFAULT_HISTORY_LENGTH = 20
 
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
@@ -278,9 +259,25 @@ class PoseMetrics:
         for point_name in PART_MAP:
             self.history[point_name] = []
 
+    def register_keypoints(self, keypoints):
+        """
+        Takes a dictionary of parsed pose data and adds it to the history list with timestamp.
+
+        Args:
+            keypoints(dict): Latest set of pose data as parsed dictionary.
+
+        """
+        data = {}
+        for point in keypoints:
+            if point in PART_MAP.values():
+                data[point] = keypoints[point]
+        self.history.insert(0, data)
+        # Prune list if it gets too long
+        if len(self.history) > self.history_length:
+            self.history.pop()
 
     @staticmethod
-    def midpoint(keypoints, point_1_name=DEFAULT_MIDPOINT_1, point_2_name=DEFAULT_MIDPOINT_2):
+    def midpoint(keypoints, point_1_name=DEFAULT_FOCUS_POINT_1, point_2_name=DEFAULT_FOCUS_POINT_2):
         """
         Finds the middle point between 2 x,y locations. Default points are left and right wrists.
 
@@ -304,7 +301,7 @@ class PoseMetrics:
         return midpoint_x, midpoint_y, (proximity_x + proximity_y) / 2
 
     @staticmethod
-    def centroid(keypoints, point_list=None):
+    def centroid(keypoints, point_list=(DEFAULT_FOCUS_POINT_1, DEFAULT_FOCUS_POINT_2)):
         """
         Returns the mean x,y coordinates as a midpoint from a list of specified point names.
         Defaults to entire part map.
@@ -326,20 +323,93 @@ class PoseMetrics:
                 y_list.append(keypoints[point][1])
         return np.mean(x_list), np.mean(y_list)
 
-    def speed_of_points(self, keypoints, point_list=None):
+    def avg_speed_of_points(self, point_list=None):
+        """
+        Computes the average speed of one or more keypoints using recorded history.
+
+        Args:
+            point_list(list[str]): A list of keypoint names to measure.
+
+        Returns:
+            dict[str, float]: Dictionary of average speed of each point requested.
+        """
+        speed_dict = {}
         if point_list is None:
             point_list = PART_MAP.values()
-        for point in keypoints:
+        for point in point_list:
             if point in PART_MAP.values():
+                speed_dict[point] = self.average_speed_of_point(point)
+        return speed_dict
 
+    @staticmethod
+    def get_angle(base_point, outer_point):
+        """
+        Helper method for calculating angle between two points.
 
+        Args:
+            base_point(tuple[float, float]): First point
+            outer_point(tuple[float, float]): Second point
+
+        Returns:
+            float: Angle given two points in degrees.
+        """
+
+        if outer_point[0] > base_point[0]:
+            x = outer_point[0] - base_point[0]
+        else:
+            x = base_point[0] - outer_point[0]
+        if outer_point[1] > base_point[1]:
+            y = outer_point[1] - base_point[1]
+        else:
+            y = base_point[1] - outer_point[1]
+
+        return math.degrees(math.atan(y / x))
+
+    @staticmethod
+    def absolute_speed(point_name, keypoints_a, keypoints_b):
+        """
+        Quickly calculates the absolute velocity between two sets of x,y co-ordinates with given timestamps.
+        Args:
+            point_name(str): Name of the point to measure.
+            keypoints_a(dict): Dictionary of keypoints for point A.
+            keypoints_b(dict): Dictionary of keypoints for point B.
+
+        Returns:
+            float: Velocity for movement between two points irrespective of direction.
+        """
+        abs_speed = 0.0
+        if point_name in PART_MAP.values():
+            abs_speed = np.sqrt((abs(keypoints_a[point_name][0] - keypoints_b[point_name][0]) ** 2) +
+                                (abs(keypoints_a[point_name][0] - keypoints_b[point_name][0]) ** 2)) / \
+                        abs(keypoints_b["timestamp"].to_sec()) - keypoints_a["timestamp"].to_sec()
+        return abs_speed
+
+    def average_speed_of_point(self, point_name):
+        """
+        Calculate the overage speed for a point based on history of keypoints.
+
+        Args:
+            point_name(str): Name of keypoint to measure.
+
+        Returns:
+            float: Average speed of a point over our history irrespetive of direction.
+        """
+        avg_speed = 0.0
+        previous_keypoints = None
+        if len(self.history) >= 2 and point_name is not None and point_name in PART_MAP.values():
+            for keypoints in self.history:
+                if previous_keypoints is not None:
+                    avg_speed += PoseMetrics.absolute_speed(point_name, keypoints, previous_keypoints)
+                previous_keypoints = keypoints
+            avg_speed /= len(self.history)
+        return avg_speed
+
+    # Helper dictionary for selecting functions for metrics.
     metric_list = {
         "offset_midpoints": midpoint,
         "centroid": centroid,
-        "speed_of_hands": speed_of_hands
+        "average_speed_of_points": avg_speed_of_points
     }
-
-
 
 
 if __name__ == '__main__':
