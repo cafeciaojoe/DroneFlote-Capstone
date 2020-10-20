@@ -242,11 +242,32 @@ class PoseParserNode:
         Test function for sending dummy messages over publisher topic.
 
         """
+        x = 5
+        y = 0
+        z = 0
+        x_2 = 0
+        y_2 = 0
+        z_2 = 0
+        w = 0
+        # Rotate through each setting to test drone response once every 10 sec.
         while True:
             rospy.sleep(10)
-            self.publisher(0, 0, 1)
-            rospy.sleep(10)
-            self.publisher(0, 0, 1)
+            self.publisher(x, y, z, x_2, y_2, z_2, w)
+            x_tmp = x
+            y_tmp = y
+            z_tmp = z
+            x_2_tmp = x_2
+            y_2_tmp = y_2
+            z_2_tmp = z_2
+            w_tmp = w
+
+            x = w_tmp
+            y = x_tmp
+            z = y_tmp
+            x_2 = z_tmp
+            y_2 = x_2_tmp
+            z_2 = y_2_tmp
+            w = z_2_tmp
 
 
 class PoseMetrics:
