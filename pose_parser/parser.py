@@ -165,7 +165,7 @@ class PoseParserNode:
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
 
-    def publisher(self, x, y, z):
+    def publisher(self, x, y, z, x_2=0, y_2=0, z_2=0, w=0):
         """
         Generates and publishes a MultiDOFJointTrajectory message from inputs to publisher topic for simulator.
 
@@ -173,6 +173,10 @@ class PoseParserNode:
             x:
             y:
             z:
+            x_2:
+            y_2:
+            z_2:
+            w:
         """
         trajectory = MultiDOFJointTrajectory()
         trajectory.header = Header()
@@ -184,7 +188,7 @@ class PoseParserNode:
         trajectory.points.append(point)
         pub.publish(trajectory)
 
-    def create_point(self, x, y, z):
+    def create_point(self, x, y, z, x_2=0, y_2=0, z_2=0, w=0):
         """
         Creates and returns a Transform object for messaging given x, y, z values.
 
@@ -195,13 +199,13 @@ class PoseParserNode:
         transformation.translation.x = x
         transformation.translation.y = y
         transformation.translation.z = z
-        transformation.rotation.x = 0
-        transformation.rotation.y = 0
-        transformation.rotation.z = 0
-        transformation.rotation.w = 0
+        transformation.rotation.x = x_2
+        transformation.rotation.y = y_2
+        transformation.rotation.z = z_2
+        transformation.rotation.w = w
         return transformation
 
-    def create_velocity(self, x, y, z):
+    def create_velocity(self, x, y, z, x_2=0, y_2=0, z_2=0):
         """
         Creates and returns a Velocity object for messaging given x, y, z values.
 
@@ -212,12 +216,12 @@ class PoseParserNode:
         velocity.linear.x = x
         velocity.linear.y = y
         velocity.linear.z = z
-        velocity.angular.x = 0
-        velocity.angular.y = 0
-        velocity.angular.z = 0
+        velocity.angular.x = x_2
+        velocity.angular.y = y_2
+        velocity.angular.z = z_2
         return velocity
 
-    def create_acceleration(self, x, y, z):
+    def create_acceleration(self, x, y, z, x_2=0, y_2=0, z_2=0):
         """
         Creates and returns an Acceleration object for messaging given x, y, z values.
 
@@ -228,9 +232,9 @@ class PoseParserNode:
         acceleration.linear.x = x
         acceleration.linear.y = y
         acceleration.linear.z = z
-        acceleration.angular.x = 0
-        acceleration.angular.y = 0
-        acceleration.angular.z = 0
+        acceleration.angular.x = x_2
+        acceleration.angular.y = y_2
+        acceleration.angular.z = z_2
         return acceleration
 
     def test_publish(self):
