@@ -2,9 +2,11 @@
 import math
 
 import rospy
+import eigenpy
 from std_msgs.msg import String, Header
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
-from geometry_msgs.msg import Transform, Twist
+from geometry_msgs.msg import Transform, Twist, Vector3
+import mav_msgs
 import json
 import numpy as np
 
@@ -48,8 +50,7 @@ class PoseParserNode:
         self.metrics = PoseMetrics()
         rospy.init_node('parser_node', anonymous=True)
 
-    @staticmethod
-    def convert_to_dictionary(data):
+    def convert_to_dictionary(self, data):
         """
         Takes data recorded from posenet and converts it into a python dictionary with sensible keys.
 
@@ -68,6 +69,7 @@ class PoseParserNode:
                 "score": float(data[i]["score"])
             }
         pose_dict["timestamp"] = rospy.Time.now()
+        self.metrics.register_keypoints(pose_dict)
         return pose_dict
 
     def callback(self, data):
@@ -80,7 +82,7 @@ class PoseParserNode:
 
         """
         points_data = json.loads(data.data)
-        keypoints = PoseParserNode.convert_to_dictionary(points_data)
+        keypoints = self.convert_to_dictionary(points_data)
         self.simulation_pose_demo(keypoints)
 
     def simulation_pose_demo(self, keypoints):
@@ -281,12 +283,13 @@ class PoseMetrics:
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
-        for point_name in PART_MAP:
-            self.history[point_name] = []
+        # for point_name in PART_MAP:
+        #     self.history[point_name] = []
 
     def register_keypoints(self, keypoints):
         """
         Takes a dictionary of parsed pose data and adds it to the history list with timestamp.
+        Ideally, should only be called once, immediately after keypoints are parsed.
 
         Args:
             keypoints(dict): Latest set of pose data as parsed dictionary.
@@ -440,5 +443,5 @@ class PoseMetrics:
 if __name__ == '__main__':
     # Startup for node.
     node = PoseParserNode()
-    node.listener()
-    # node.test_publish()
+    # node.listener()
+    node.test_publish()

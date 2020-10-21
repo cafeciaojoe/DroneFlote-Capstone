@@ -28,7 +28,9 @@ RUN apt-get -qq update && \
         ros-melodic-cpp-common \
         # Messaging requirements for imports
         # ros-melodic-trajectory-msgs ros-melodic-geometry-msgs python-trajectory-msgs python-geometry-msgs
-        ros-melodic-common-msgs
+        ros-melodic-common-msgs \
+        libeigen3-dev ros-melodic-eigenpy \
+        ros-melodic-mav-msgs
 
 
 
@@ -52,7 +54,7 @@ WORKDIR /parser/src
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_init_workspace"
 
 # Copy python demo listener to workspace package
-RUN catkin_create_pkg parser std_msgs rospy roscpp trajectory_msgs geometry_msgs
+RUN catkin_create_pkg parser std_msgs rospy roscpp trajectory_msgs mav_msgs geometry_msgs eigenpy
 WORKDIR /parser/src/parser/python
 #RUN mkdir python
 #COPY *.* python/
@@ -66,6 +68,8 @@ RUN chmod +x -R python
 RUN pip2 install -r python/requirements.txt
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
     echo catkin_install_python\(PROGRAMS python/parser.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
+#RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
+#    echo include_directories\(${Eigen_INCLUDE_DIRS}\) >> CMakeLists.txt"
 
 WORKDIR /parser
 
