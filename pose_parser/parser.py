@@ -2,9 +2,11 @@
 import math
 
 import rospy
+import eigenpy
 from std_msgs.msg import String, Header
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
-from geometry_msgs.msg import Transform, Twist
+from geometry_msgs.msg import Transform, Twist, Vector3
+import mav_msgs
 import json
 import numpy as np
 
@@ -48,8 +50,7 @@ class PoseParserNode:
         self.metrics = PoseMetrics()
         rospy.init_node('parser_node', anonymous=True)
 
-    @staticmethod
-    def convert_to_dictionary(data):
+    def convert_to_dictionary(self, data):
         """
         Takes data recorded from posenet and converts it into a python dictionary with sensible keys.
 
@@ -68,6 +69,7 @@ class PoseParserNode:
                 "score": float(data[i]["score"])
             }
         pose_dict["timestamp"] = rospy.Time.now()
+        self.metrics.register_keypoints(pose_dict)
         return pose_dict
 
     def callback(self, data):
@@ -80,7 +82,7 @@ class PoseParserNode:
 
         """
         points_data = json.loads(data.data)
-        keypoints = PoseParserNode.convert_to_dictionary(points_data)
+        keypoints = self.convert_to_dictionary(points_data)
         self.simulation_pose_demo(keypoints)
 
     def simulation_pose_demo(self, keypoints):
@@ -165,7 +167,7 @@ class PoseParserNode:
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
 
-    def publisher(self, x, y, z):
+    def publisher(self, x, y, z, x_2=0, y_2=0, z_2=0, w=0):
         """
         Generates and publishes a MultiDOFJointTrajectory message from inputs to publisher topic for simulator.
 
@@ -173,6 +175,10 @@ class PoseParserNode:
             x:
             y:
             z:
+            x_2:
+            y_2:
+            z_2:
+            w:
         """
         trajectory = MultiDOFJointTrajectory()
         trajectory.header = Header()
@@ -184,7 +190,7 @@ class PoseParserNode:
         trajectory.points.append(point)
         pub.publish(trajectory)
 
-    def create_point(self, x, y, z):
+    def create_point(self, x, y, z, x_2=0, y_2=0, z_2=0, w=0):
         """
         Creates and returns a Transform object for messaging given x, y, z values.
 
@@ -195,13 +201,13 @@ class PoseParserNode:
         transformation.translation.x = x
         transformation.translation.y = y
         transformation.translation.z = z
-        transformation.rotation.x = 0
-        transformation.rotation.y = 0
-        transformation.rotation.z = 0
-        transformation.rotation.w = 0
+        transformation.rotation.x = x_2
+        transformation.rotation.y = y_2
+        transformation.rotation.z = z_2
+        transformation.rotation.w = w
         return transformation
 
-    def create_velocity(self, x, y, z):
+    def create_velocity(self, x, y, z, x_2=0, y_2=0, z_2=0):
         """
         Creates and returns a Velocity object for messaging given x, y, z values.
 
@@ -212,12 +218,12 @@ class PoseParserNode:
         velocity.linear.x = x
         velocity.linear.y = y
         velocity.linear.z = z
-        velocity.angular.x = 0
-        velocity.angular.y = 0
-        velocity.angular.z = 0
+        velocity.angular.x = x_2
+        velocity.angular.y = y_2
+        velocity.angular.z = z_2
         return velocity
 
-    def create_acceleration(self, x, y, z):
+    def create_acceleration(self, x, y, z, x_2=0, y_2=0, z_2=0):
         """
         Creates and returns an Acceleration object for messaging given x, y, z values.
 
@@ -228,9 +234,9 @@ class PoseParserNode:
         acceleration.linear.x = x
         acceleration.linear.y = y
         acceleration.linear.z = z
-        acceleration.angular.x = 0
-        acceleration.angular.y = 0
-        acceleration.angular.z = 0
+        acceleration.angular.x = x_2
+        acceleration.angular.y = y_2
+        acceleration.angular.z = z_2
         return acceleration
 
     def test_publish(self):
@@ -238,11 +244,32 @@ class PoseParserNode:
         Test function for sending dummy messages over publisher topic.
 
         """
+        x = 5
+        y = 0
+        z = 0
+        x_2 = 0
+        y_2 = 0
+        z_2 = 0
+        w = 0
+        # Rotate through each setting to test drone response once every 10 sec.
         while True:
             rospy.sleep(10)
-            self.publisher(0, 0, 1)
-            rospy.sleep(10)
-            self.publisher(0, 0, 1)
+            self.publisher(x, y, z, x_2, y_2, z_2, w)
+            x_tmp = x
+            y_tmp = y
+            z_tmp = z
+            x_2_tmp = x_2
+            y_2_tmp = y_2
+            z_2_tmp = z_2
+            w_tmp = w
+
+            x = w_tmp
+            y = x_tmp
+            z = y_tmp
+            x_2 = z_tmp
+            y_2 = x_2_tmp
+            z_2 = y_2_tmp
+            w = z_2_tmp
 
 
 class PoseMetrics:
@@ -256,12 +283,13 @@ class PoseMetrics:
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
-        for point_name in PART_MAP:
-            self.history[point_name] = []
+        # for point_name in PART_MAP:
+        #     self.history[point_name] = []
 
     def register_keypoints(self, keypoints):
         """
         Takes a dictionary of parsed pose data and adds it to the history list with timestamp.
+        Ideally, should only be called once, immediately after keypoints are parsed.
 
         Args:
             keypoints(dict): Latest set of pose data as parsed dictionary.
@@ -415,5 +443,5 @@ class PoseMetrics:
 if __name__ == '__main__':
     # Startup for node.
     node = PoseParserNode()
-    node.listener()
-    # node.test_publish()
+    # node.listener()
+    node.test_publish()
