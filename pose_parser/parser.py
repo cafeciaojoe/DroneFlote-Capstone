@@ -274,6 +274,9 @@ class PoseParserNode:
             w = z_2_tmp
 
     def test_metrics(self, keypoints):
+        self.metrics.midpoint(keypoints)
+        self.metrics.centroid(keypoints)
+        self.metrics.avg_speed_of_points()
 
 
 class PoseMetrics:
@@ -287,8 +290,6 @@ class PoseMetrics:
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
-        # for point_name in PART_MAP:
-        #     self.history[point_name] = []
 
     def register_keypoints(self, keypoints):
         """
