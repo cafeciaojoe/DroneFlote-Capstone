@@ -83,7 +83,8 @@ class PoseParserNode:
         """
         points_data = json.loads(data.data)
         keypoints = self.convert_to_dictionary(points_data)
-        self.simulation_pose_demo(keypoints)
+        # self.simulation_pose_demo(keypoints)
+        self.test_metrics(keypoints)
 
     def simulation_pose_demo(self, keypoints):
         """
@@ -185,12 +186,13 @@ class PoseParserNode:
         trajectory.header.stamp = rospy.Time()
         trajectory.header.frame_id = ''
         trajectory.joint_names = ["base_link"]
-        point = MultiDOFJointTrajectoryPoint([self.create_point(x, y, z)], [self.create_velocity(0, 0, 0)],
-                                             [self.create_acceleration(0, 0, 0)], rospy.Time(3))
+        point = MultiDOFJointTrajectoryPoint([self.create_point(x, y, z, x_2, y_2, z_2, w)],
+                                             [self.create_velocity(1, 1, 1)],
+                                             [self.create_acceleration(1, 1, 1)], rospy.Time(1))
         trajectory.points.append(point)
         pub.publish(trajectory)
 
-    def create_point(self, x, y, z, x_2=0, y_2=0, z_2=0, w=0):
+    def create_point(self, x, y, z, x_2=0, y_2=0, z_2=0, w=1):
         """
         Creates and returns a Transform object for messaging given x, y, z values.
 
@@ -207,7 +209,7 @@ class PoseParserNode:
         transformation.rotation.w = w
         return transformation
 
-    def create_velocity(self, x, y, z, x_2=0, y_2=0, z_2=0):
+    def create_velocity(self, x, y, z, x_2=1, y_2=1, z_2=1):
         """
         Creates and returns a Velocity object for messaging given x, y, z values.
 
@@ -223,7 +225,7 @@ class PoseParserNode:
         velocity.angular.z = z_2
         return velocity
 
-    def create_acceleration(self, x, y, z, x_2=0, y_2=0, z_2=0):
+    def create_acceleration(self, x, y, z, x_2=1, y_2=1, z_2=1):
         """
         Creates and returns an Acceleration object for messaging given x, y, z values.
 
@@ -244,16 +246,16 @@ class PoseParserNode:
         Test function for sending dummy messages over publisher topic.
 
         """
-        x = 5
-        y = 0
-        z = 0
-        x_2 = 0
-        y_2 = 0
-        z_2 = 0
-        w = 0
+        x = 20
+        y = 1
+        z = 1
+        x_2 = 1
+        y_2 = 1
+        z_2 = 1
+        w = 1
         # Rotate through each setting to test drone response once every 10 sec.
         while True:
-            rospy.sleep(10)
+            rospy.sleep(20)
             self.publisher(x, y, z, x_2, y_2, z_2, w)
             x_tmp = x
             y_tmp = y
@@ -271,6 +273,11 @@ class PoseParserNode:
             z_2 = y_2_tmp
             w = z_2_tmp
 
+    def test_metrics(self, keypoints):
+        self.metrics.midpoint(keypoints)
+        self.metrics.centroid(keypoints)
+        self.metrics.avg_speed_of_points()
+
 
 class PoseMetrics:
     """
@@ -283,8 +290,6 @@ class PoseMetrics:
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
-        # for point_name in PART_MAP:
-        #     self.history[point_name] = []
 
     def register_keypoints(self, keypoints):
         """
@@ -326,6 +331,9 @@ class PoseMetrics:
         midpoint_y = min(point_1[1], point_2[1]) - (y_diff / 2)
         proximity_x = (midpoint_x - min(point_1[0], point_2[0])) / x_diff
         proximity_y = (midpoint_y - min(point_1[1], point_2[1])) / x_diff
+        rospy.loginfo("Offset Mid\nPoint 1: %s @ %s, Point 2: %s @ %s, Mid-Point: %s, Proximity Score: %s" %
+                      (point_1_name, str(point_1), point_2_name, str(point_2), str((midpoint_x, midpoint_y)),
+                       str((proximity_x + proximity_y) / 2)))
         return midpoint_x, midpoint_y, (proximity_x + proximity_y) / 2
 
     @staticmethod
@@ -349,7 +357,9 @@ class PoseMetrics:
             if point in PART_MAP.values():
                 x_list.append(keypoints[point][0])
                 y_list.append(keypoints[point][1])
-        return np.mean(x_list), np.mean(y_list)
+        midpoint = (np.mean(x_list), np.mean(y_list))
+        rospy.loginfo("Centroid\nMidpoint: %s" % str(midpoint))
+        return midpoint
 
     def avg_speed_of_points(self, point_list=None):
         """
@@ -367,6 +377,7 @@ class PoseMetrics:
         for point in point_list:
             if point in PART_MAP.values():
                 speed_dict[point] = self.average_speed_of_point(point)
+        rospy.loginfo("Average Speeds\n%s" % str(speed_dict))
         return speed_dict
 
     @staticmethod
@@ -443,5 +454,5 @@ class PoseMetrics:
 if __name__ == '__main__':
     # Startup for node.
     node = PoseParserNode()
-    # node.listener()
-    node.test_publish()
+    node.listener()
+    # node.test_publish()
