@@ -128,7 +128,7 @@ The project contains several docker images that will all run and communicate wit
 
 One of these containers holds the pose recognition over camera application on a web server accessible by going to the following address:
 ```text
-http://localhost:8888/
+https://localhost:8888/
 ```
 
 There are two options to select from here. 
