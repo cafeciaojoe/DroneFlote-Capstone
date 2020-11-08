@@ -78,6 +78,7 @@ class PoseParserNode:
             data: Data received from ROS subscription.
 
         """
+        rospy.loginfo("Callback Called")
         points_data = json.loads(data.data)
         keypoints = self.convert_to_dictionary(points_data)
         # self.simulation_pose_demo(keypoints) TODO
