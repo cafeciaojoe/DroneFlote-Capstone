@@ -10,6 +10,9 @@ import mav_msgs
 import json
 import numpy as np
 
+# Confidence score required to validate a keypoint set.
+MINIMUM_CONFIDENCE = 0.5
+
 # Mapping of parts to array as per posenet keypoints.
 PART_MAP = {
     0: "nose",
@@ -40,7 +43,6 @@ class PoseParserNode:
     """
     # Options for default metric are: TODO
     DEFAULT_METRIC = "demo_metric"
-    MINIMUM_CONFIDENCE = 0.5
 
     def __init__(self):
         self.metrics = PoseMetrics()
@@ -81,11 +83,11 @@ class PoseParserNode:
         points_data = json.loads(data.data)
         keypoints = self.convert_to_dictionary(points_data)
         # self.simulation_pose_demo(keypoints) TODO
-        # self.test_metrics(keypoints)
-        if self.DEFAULT_METRIC in self.metric_functions:
-            trajectory_points = self.metrics.execute_metric(self.DEFAULT_METRIC, keypoints)
-            if trajectory_points is not None:
-                self.publisher(trajectory_points)
+        self.test_metrics(keypoints)
+        # if self.DEFAULT_METRIC in self.metric_functions:
+        #     trajectory_points = self.metrics.execute_metric(self.DEFAULT_METRIC, keypoints)
+        #     if trajectory_points is not None:
+        #         self.publisher(trajectory_points)
 
     def listener(self):
         """
@@ -108,27 +110,34 @@ class PoseParserNode:
         trajectory.header.stamp = rospy.Time()
         trajectory.header.frame_id = ''
         trajectory.joint_names = ["base_link"]
-        point = MultiDOFJointTrajectoryPoint([self.create_point(trajectory_parameters["x"],
-                                                                trajectory_parameters["y"],
-                                                                trajectory_parameters["z"],
-                                                                trajectory_parameters["rotation_x"],
-                                                                trajectory_parameters["rotation_y"],
-                                                                trajectory_parameters["rotation_z"],
-                                                                trajectory_parameters["rotation_w"])],
-                                             [self.create_velocity(trajectory_parameters["velocity_x"],
-                                                                   trajectory_parameters["velocity_y"],
-                                                                   trajectory_parameters["velocity_z"],
-                                                                   trajectory_parameters["velocity_angular_x"],
-                                                                   trajectory_parameters["velocity_angular_y"],
-                                                                   trajectory_parameters["velocity_angular_z"])],
-                                             [self.create_acceleration(trajectory_parameters["acceleration_linear_x"],
-                                                                       trajectory_parameters["acceleration_linear_y"],
-                                                                       trajectory_parameters["acceleration_linear_z"],
-                                                                       trajectory_parameters["acceleration_angular_x"],
-                                                                       trajectory_parameters["acceleration_angular_y"],
-                                                                       trajectory_parameters[
-                                                                           "acceleration_angular_z"])],
-                                             rospy.Time(1))
+
+        point = MultiDOFJointTrajectoryPoint([
+            self.create_point(trajectory_parameters["x"],
+                              trajectory_parameters["y"],
+                              trajectory_parameters["z"],
+                              trajectory_parameters["rotation_x"],
+                              trajectory_parameters["rotation_y"],
+                              trajectory_parameters["rotation_z"],
+                              trajectory_parameters["rotation_w"])
+        ],
+            [
+                self.create_velocity(trajectory_parameters["velocity_x"],
+                                     trajectory_parameters["velocity_y"],
+                                     trajectory_parameters["velocity_z"],
+                                     trajectory_parameters["velocity_angular_x"],
+                                     trajectory_parameters["velocity_angular_y"],
+                                     trajectory_parameters["velocity_angular_z"])
+            ],
+            [
+                self.create_acceleration(trajectory_parameters["acceleration_linear_x"],
+                                         trajectory_parameters["acceleration_linear_y"],
+                                         trajectory_parameters["acceleration_linear_z"],
+                                         trajectory_parameters["acceleration_angular_x"],
+                                         trajectory_parameters["acceleration_angular_y"],
+                                         trajectory_parameters["acceleration_angular_z"])
+            ],
+            rospy.Time(1))
+
         trajectory.points.append(point)
         rospy.loginfo(trajectory)
         pub.publish(trajectory)
@@ -209,9 +218,6 @@ class PoseMetrics:
     # Length of list to calculate averages from history.
     DEFAULT_HISTORY_LENGTH = 50
 
-    # Confidence score required to validate a keypoint set.
-    MINIMUM_CONFIDENCE = 0.5
-
     # Used for demo_metric.
     high = None
 
@@ -236,7 +242,7 @@ class PoseMetrics:
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
-        self.centroid_history = []
+        self.centroid_history = [{}]
 
     def register_keypoints(self, keypoints):
         """
@@ -251,9 +257,9 @@ class PoseMetrics:
         try:
             for point in keypoints:
                 if point in PART_MAP.values():
-                    if data[point]["score"] < self.MINIMUM_CONFIDENCE:
+                    if data[point]["score"] < MINIMUM_CONFIDENCE:
                         return False
-                    data[point] = keypoints[point]
+                    data[point] = keypoints[point]["position"]
                 elif point == "timestamp":
                     data["timestamp"] = keypoints[point]
             self.history.insert(0, data)
@@ -297,8 +303,7 @@ class PoseMetrics:
                        str((proximity_x + proximity_y) / 2)))
         return midpoint_x, midpoint_y, (proximity_x + proximity_y) / 2
 
-    @staticmethod
-    def centroid(keypoints, point_list1=None, point_list2=None):
+    def centroid(self, keypoints, point_list1=None, point_list2=None):
         """
         Returns the mean x,y coordinates as a midpoint from a list of specified point names.
         Defaults to entire part map.
@@ -319,6 +324,9 @@ class PoseMetrics:
                 x_list.append(keypoints[point][0])
                 y_list.append(keypoints[point][1])
         midpoint = (np.mean(x_list), np.mean(y_list))
+        self.centroid_history.insert(0, {"midpoint": {"x": midpoint[0],
+                                                      "y": midpoint[1]},
+                                         "timestamp": rospy.Time.now()})
         rospy.loginfo("Centroid\nMidpoint: %s" % str(midpoint))
         return midpoint
 
@@ -379,8 +387,8 @@ class PoseMetrics:
         """
         abs_speed = 0.0
         if point_name in PART_MAP.values():
-            abs_speed = np.sqrt((abs(keypoints_a[point_name][0] - keypoints_b[point_name][0]) ** 2) +
-                                (abs(keypoints_a[point_name][0] - keypoints_b[point_name][0]) ** 2)) / \
+            abs_speed = np.sqrt((abs(keypoints_a[point_name]["x"] - keypoints_b[point_name]["x"]) ** 2) +
+                                (abs(keypoints_a[point_name]["y"] - keypoints_b[point_name]["y"]) ** 2)) / \
                         abs(keypoints_b["timestamp"].to_sec()) - keypoints_a["timestamp"].to_sec()
         return abs_speed
 
@@ -394,10 +402,15 @@ class PoseMetrics:
         Returns:
             float: Average speed of a point over our history irrespetive of direction.
         """
+        if point_name is not None and point_name == "midpoint":
+            dictionary = self.centroid_history
+        else:
+            dictionary = self.history
         avg_speed = 0.0
         previous_keypoints = None
-        if len(self.history) >= 2 and point_name is not None and point_name in PART_MAP.values():
-            for keypoints in self.history:
+        if len(dictionary) >= 2 and point_name is not None and (point_name in PART_MAP.values() or
+                                                                point_name == "midpoint"):
+            for keypoints in dictionary:
                 if previous_keypoints is not None:
                     avg_speed += PoseMetrics.absolute_speed(point_name, keypoints, previous_keypoints)
                 previous_keypoints = keypoints
@@ -413,8 +426,8 @@ class PoseMetrics:
             keypoints(dict): Parsed posenet dictionary of key-points.
 
         """
-        if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
+        if keypoints[self.POSITION_BASE]["score"] > MINIMUM_CONFIDENCE and \
+                keypoints[self.POSITION_OUTER]["score"] > MINIMUM_CONFIDENCE:
 
             angle_horizontal = PoseMetrics.get_angle(keypoints[self.POSITION_BASE]["position"],
                                                      keypoints[self.POSITION_OUTER]["position"])
@@ -426,6 +439,7 @@ class PoseMetrics:
                               self.ANGLE_THRESHOLD, current_angle, keypoints[self.POSITION_BASE]["score"],
                               keypoints[self.POSITION_OUTER]["score"], angle_horizontal)
             self.previous_angle = current_angle
+        return None
 
     def simulation_pose_demo(self, keypoints, first=None, second=None):
         """
@@ -438,10 +452,10 @@ class PoseMetrics:
         """
         ret_dict = None
         # Check the confidence in all points required is above our threshold.
-        if keypoints["nose"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["rightKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["leftKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["rightWrist"]["score"] > self.MINIMUM_CONFIDENCE:
+        if keypoints["nose"]["score"] > MINIMUM_CONFIDENCE and \
+                keypoints["rightKnee"]["score"] > MINIMUM_CONFIDENCE and \
+                keypoints["leftKnee"]["score"] > MINIMUM_CONFIDENCE and \
+                keypoints["rightWrist"]["score"] > MINIMUM_CONFIDENCE:
             midpoint_y = ((keypoints["leftKnee"]["position"][1] + keypoints["rightKnee"]["position"][1]) / 2) - \
                          keypoints["nose"]["position"][1]
             # Y axis is inverted, assign bool accordingly, Lower is larger, Higher is smaller
@@ -574,9 +588,9 @@ class PoseMetrics:
                 if key not in keypoint_dict.keys():
                     return None
                 if key != "timestamp" and (keypoint_dict[key] is None or keypoint_dict[key]["score"] is None or
-                                           keypoint_dict[key]["score"] < self.MINIMUM_CONFIDENCE):
+                                           keypoint_dict[key]["score"] < MINIMUM_CONFIDENCE):
                     return None
-            
+            # Call the appropriate function from the metric_list dictionary with the name as the key.
             results = self.metric_list[metric_name](self, keypoint_dict, first_list, second_list)
         except KeyError:
             return None
