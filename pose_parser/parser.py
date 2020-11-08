@@ -39,15 +39,13 @@ class PoseParserNode:
     """
     ROSpy Node for parsing data from posenet. Adds timestamp to notate when message was received.
     """
-    ANGLE_THRESHOLD = 15
-    previous_angle = None
-    POSITION_BASE = "rightShoulder"
-    POSITION_OUTER = "rightWrist"
+    # Options for default metric are: TODO
+    DEFAULT_METRIC = "demo_metric"
     MINIMUM_CONFIDENCE = 0.5
-    high = None
 
     def __init__(self):
         self.metrics = PoseMetrics()
+        self.metric_functions = PoseMetrics.metric_list
         rospy.init_node('parser_node', anonymous=True)
 
     def convert_to_dictionary(self, data):
@@ -83,81 +81,8 @@ class PoseParserNode:
         """
         points_data = json.loads(data.data)
         keypoints = self.convert_to_dictionary(points_data)
-        # self.simulation_pose_demo(keypoints)
+        # self.simulation_pose_demo(keypoints) TODO
         self.test_metrics(keypoints)
-
-    def simulation_pose_demo(self, keypoints):
-        """
-        Midpoint metric for simulation demo. Monitors right wrist in relation to middle point between nose and knees.
-        Logs locations of key-points to console and forwards message to simulator.
-
-        Args:
-            keypoints(dict): A dictionary of parsed posenet key-points.
-
-        """
-        # Check the confidence in all points required is above our threshold.
-
-        if keypoints["nose"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["rightKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["leftKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints["rightWrist"]["score"] > self.MINIMUM_CONFIDENCE:
-            midpoint_y = ((keypoints["leftKnee"]["position"][1] + keypoints["rightKnee"]["position"][1]) / 2) - \
-                         keypoints["nose"]["position"][1]
-            # Y axis is inverted, assign bool accordingly, Lower is larger, Higher is smaller
-            above = False if keypoints["rightWrist"]["position"][1] > midpoint_y else True
-            rospy.loginfo(
-                "High = %s, midpoint = %s, wrist_y = %s" % (above, midpoint_y, keypoints["rightWrist"]["position"][1]))
-            if self.high is None:
-                self.high = not above
-            if self.high != above:
-                rospy.loginfo("Switch hover mode")
-                rospy.loginfo("High = %s, midpoint = %s, wrist_y = %s" % (
-                    above, midpoint_y, keypoints["rightWrist"]["position"][1]))
-                # Statically defined heights for drone locations for demo purposes.
-                if above:
-                    self.publisher(0, 0, 3)
-                else:
-                    self.publisher(0, 0, 1)
-            self.high = above
-        else:
-            # Log keypoint data if confidence did not meet threshold.
-            rospy.loginfo("nose = %s, %s, knee1 = %s, %s, knee2 = %s, %s, wrist = %s, %s" % (keypoints["nose"]["score"],
-                                                                                             keypoints["nose"][
-                                                                                                 "position"],
-                                                                                             keypoints["rightKnee"][
-                                                                                                 "score"],
-                                                                                             keypoints["rightKnee"][
-                                                                                                 "position"],
-                                                                                             keypoints["leftKnee"][
-                                                                                                 "score"],
-                                                                                             keypoints["leftKnee"][
-                                                                                                 "position"],
-                                                                                             keypoints["rightWrist"][
-                                                                                                 "score"],
-                                                                                             keypoints["rightWrist"][
-                                                                                                 "position"]))
-
-    def positional_demo(self, keypoints):
-        """
-        Measures horizontal angle between two points and logs when the angle passes between a threshold angle.
-
-        Args:
-            keypoints(dict): Parsed posenet dictionary of key-points.
-
-        """
-        if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
-                keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
-
-            angle_horizontal = PoseMetrics.get_angle(keypoints[self.POSITION_BASE]["position"],
-                                                        keypoints[self.POSITION_OUTER]["position"])
-            current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
-            if self.previous_angle is None:
-                self.previous_angle = not current_angle
-            if self.previous_angle != current_angle:
-                rospy.loginfo(rospy.get_caller_id() + " Over %s degrees?: %s | Confidence = %s:%s | Angle = %s",
-                              self.ANGLE_THRESHOLD, current_angle, keypoints[self.POSITION_BASE]["score"],
-                              keypoints[self.POSITION_OUTER]["score"], angle_horizontal)
-            self.previous_angle = current_angle
 
     def listener(self):
         """
@@ -283,13 +208,29 @@ class PoseMetrics:
     """
     Container class for pose metrics.
     """
+    # Default Focus for the average_speed metric
     DEFAULT_FOCUS_POINT_1 = "leftWrist"
     DEFAULT_FOCUS_POINT_2 = "rightWrist"
-    DEFAULT_HISTORY_LENGTH = 20
+
+    # Default focus for angle threshold demo.
+    ANGLE_THRESHOLD = 15
+    previous_angle = None
+    POSITION_BASE = "rightShoulder"
+    POSITION_OUTER = "rightWrist"
+
+    # Length of list to calculate averages from history.
+    DEFAULT_HISTORY_LENGTH = 50
+
+    # Confidence score required to validate a keypoint set.
+    MINIMUM_CONFIDENCE = 0.5
+
+    # Used for demo_metric.
+    high = None
 
     def __init__(self, history_length=DEFAULT_HISTORY_LENGTH):
         self.history_length = history_length
         self.history = [{}]
+        self.centroid_history = []
 
     def register_keypoints(self, keypoints):
         """
@@ -308,6 +249,8 @@ class PoseMetrics:
         # Prune list if it gets too long
         if len(self.history) > self.history_length:
             self.history.pop()
+        if len(self.centroid_history) > self.history_length:
+            self.centroid_history.pop()
 
     @staticmethod
     def midpoint(keypoints, point_1_name=DEFAULT_FOCUS_POINT_1, point_2_name=DEFAULT_FOCUS_POINT_2):
@@ -337,23 +280,23 @@ class PoseMetrics:
         return midpoint_x, midpoint_y, (proximity_x + proximity_y) / 2
 
     @staticmethod
-    def centroid(keypoints, point_list=(DEFAULT_FOCUS_POINT_1, DEFAULT_FOCUS_POINT_2)):
+    def centroid(keypoints, point_list1=(DEFAULT_FOCUS_POINT_1, DEFAULT_FOCUS_POINT_2), point_list2=None):
         """
         Returns the mean x,y coordinates as a midpoint from a list of specified point names.
         Defaults to entire part map.
 
         Args:
             keypoints(dict): A dictionary of all pose keypoints.
-            point_list(list[str]): A list of keypoint position names present in the part map.
+            point_list1(list[str]): A list of keypoint position names present in the part map.
 
         Returns:
 
         """
-        if point_list is None:
-            point_list = PART_MAP.values()
+        if point_list1 is None:
+            point_list1 = PART_MAP.values()
         x_list = []
         y_list = []
-        for point in point_list:
+        for point in point_list1:
             if point in PART_MAP.values():
                 x_list.append(keypoints[point][0])
                 y_list.append(keypoints[point][1])
@@ -443,8 +386,88 @@ class PoseMetrics:
             avg_speed /= len(self.history)
         return avg_speed
 
+    def positional_demo(self, keypoints):
+        """
+        Measures horizontal angle between two points and logs when the angle passes between a threshold angle.
+        Logs results to console as True/False based on user interaction.
+
+        Args:
+            keypoints(dict): Parsed posenet dictionary of key-points.
+
+        """
+        if keypoints[self.POSITION_BASE]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints[self.POSITION_OUTER]["score"] > self.MINIMUM_CONFIDENCE:
+
+            angle_horizontal = PoseMetrics.get_angle(keypoints[self.POSITION_BASE]["position"],
+                                                        keypoints[self.POSITION_OUTER]["position"])
+            current_angle = True if angle_horizontal > self.ANGLE_THRESHOLD else False
+            if self.previous_angle is None:
+                self.previous_angle = not current_angle
+            if self.previous_angle != current_angle:
+                rospy.loginfo(rospy.get_caller_id() + " Over %s degrees?: %s | Confidence = %s:%s | Angle = %s",
+                              self.ANGLE_THRESHOLD, current_angle, keypoints[self.POSITION_BASE]["score"],
+                              keypoints[self.POSITION_OUTER]["score"], angle_horizontal)
+            self.previous_angle = current_angle
+
+    def simulation_pose_demo(self, keypoints):
+        """
+        Midpoint metric for simulation demo. Monitors right wrist in relation to middle point between nose and knees.
+        Logs locations of key-points to console and forwards message to simulator.
+
+        Args:
+            keypoints(dict): A dictionary of parsed posenet key-points.
+
+        """
+        # Check the confidence in all points required is above our threshold.
+
+        if keypoints["nose"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["rightKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["leftKnee"]["score"] > self.MINIMUM_CONFIDENCE and \
+                keypoints["rightWrist"]["score"] > self.MINIMUM_CONFIDENCE:
+            midpoint_y = ((keypoints["leftKnee"]["position"][1] + keypoints["rightKnee"]["position"][1]) / 2) - \
+                         keypoints["nose"]["position"][1]
+            # Y axis is inverted, assign bool accordingly, Lower is larger, Higher is smaller
+            above = False if keypoints["rightWrist"]["position"][1] > midpoint_y else True
+            rospy.loginfo(
+                "High = %s, midpoint = %s, wrist_y = %s" % (above, midpoint_y, keypoints["rightWrist"]["position"][1]))
+            if self.high is None:
+                self.high = not above
+            if self.high != above:
+                rospy.loginfo("Switch hover mode")
+                rospy.loginfo("High = %s, midpoint = %s, wrist_y = %s" % (
+                    above, midpoint_y, keypoints["rightWrist"]["position"][1]))
+                # Statically defined heights for drone locations for demo purposes.
+                if above:
+                    self.publisher(0, 0, 3)
+                else:
+                    self.publisher(0, 0, 1)
+            self.high = above
+        else:
+            # Log keypoint data if confidence did not meet threshold.
+            rospy.loginfo("nose = %s, %s, knee1 = %s, %s, knee2 = %s, %s, wrist = %s, %s" % (keypoints["nose"]["score"],
+                                                                                             keypoints["nose"][
+                                                                                                 "position"],
+                                                                                             keypoints["rightKnee"][
+                                                                                                 "score"],
+                                                                                             keypoints["rightKnee"][
+                                                                                                 "position"],
+                                                                                             keypoints["leftKnee"][
+                                                                                                 "score"],
+                                                                                             keypoints["leftKnee"][
+                                                                                                 "position"],
+                                                                                             keypoints["rightWrist"][
+                                                                                                 "score"],
+                                                                                             keypoints["rightWrist"][
+                                                                                                 "position"]))
+        return None
+
+    def generate_return_dictionary(self, x=None, y=None, z=None, proximity_value=None):
+        return None
+
     # Helper dictionary for selecting functions for metrics.
     metric_list = {
+        "positional_demo": positional_demo,
+        "demo_metric": simulation_pose_demo,
         "offset_midpoints": midpoint,
         "centroid": centroid,
         "average_speed_of_points": avg_speed_of_points
