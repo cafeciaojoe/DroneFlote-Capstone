@@ -128,7 +128,7 @@ The project contains several docker images that will all run and communicate wit
 
 One of these containers holds the pose recognition over camera application on a web server accessible by going to the following address:
 ```text
-http://localhost:8888/
+https://localhost:8888/
 ```
 
 There are two options to select from here. 
@@ -152,9 +152,8 @@ This project utilizes packages and modules from several other independent projec
 
 1. Gazebo for simulating our drones in a safe test environment and for testing purposes.
 
-1. CrazyS and Mavcomm which are both git repositories that enable us to model and fly a simulated drone modeled after the drones used in practice.
-
-1. ogether with these we have integrated a system where the pose of a user can dynamically change how a simulated drone will fly.
+1. CrazyS and Mavcomm which are both git repositories that enable us to model and fly a simulated drone modeled after the drones used in practice.  
+  Together with these we have integrated a system where the pose of a user can dynamically change how a simulated drone will fly.
 
 1. Apache for serving web based interfaces for both the simulator and pose recognition.
 

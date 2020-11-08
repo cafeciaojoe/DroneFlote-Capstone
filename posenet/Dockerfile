@@ -26,6 +26,8 @@ RUN pip install tensorflow
 RUN git clone https://github.com/tensorflow/tfjs-models.git
 WORKDIR /tfjs-models/posenet
 RUN npm install
+# Additional node packages for alternative posenet deployment
+RUN npm install p5@1.1.9 ml5@0.3.1 p5.js-svg p5.js-plot
 
 # Create webserver
 RUN apt update && apt install -y apache2 gnupg
@@ -35,6 +37,12 @@ EXPOSE 5000
 COPY templates/*.* /var/www/html/
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
 RUN service apache2 start
+RUN a2enmod proxy
+RUN a2enmod proxy_http
+RUN a2enmod ssl
+RUN a2ensite default-ssl
+COPY ports.conf /etc/apache2/
+COPY 000-default.conf default-ssl.conf /etc/apache2/sites-available/
 WORKDIR /pose/src
 
 # Init catkin workspace
