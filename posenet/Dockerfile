@@ -37,6 +37,12 @@ EXPOSE 5000
 COPY templates/*.* /var/www/html/
 RUN echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf
 RUN service apache2 start
+RUN a2enmod proxy
+RUN a2enmod proxy_http
+RUN a2enmod ssl
+RUN a2ensite default-ssl
+COPY ports.conf /etc/apache2/
+COPY 000-default.conf default-ssl.conf /etc/apache2/sites-available/
 WORKDIR /pose/src
 
 # Init catkin workspace
