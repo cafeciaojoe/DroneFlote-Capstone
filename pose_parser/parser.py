@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 import math
 
 import rospy
-import eigenpy
 from std_msgs.msg import String, Header
 from trajectory_msgs.msg import MultiDOFJointTrajectory, MultiDOFJointTrajectoryPoint
 from geometry_msgs.msg import Transform, Twist, Vector3
