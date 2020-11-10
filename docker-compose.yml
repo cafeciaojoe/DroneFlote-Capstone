@@ -26,20 +26,20 @@ services:
     depends_on:
       - roscore
 
-  simulator:
-    build:
-      context: ./simulator
-    networks:
-      - ros-custom
-    ports:
-      - "9091:9091"
-    environment:
-      - DISPLAY=novnc:0.0
-      - ROS_MASTER_URI=http://roscore:11311
-    tty: true
-    depends_on:
-      - roscore
-      - novnc
+#   simulator:
+#     build:
+#       context: ./simulator
+#     networks:
+#       - ros-custom
+#     ports:
+#       - "9091:9091"
+#     environment:
+#       - DISPLAY=novnc:0.0
+#       - ROS_MASTER_URI=http://roscore:11311
+#     tty: true
+#     depends_on:
+#       - roscore
+#       - novnc
 
   posenet:
     build:
@@ -56,14 +56,14 @@ services:
     depends_on:
       - roscore
 
-  novnc:
-    container_name: novnc
-    image: theasp/novnc
-    networks:
-      ros-custom:
-    ports:
-      - "8080:8080"
-    tty: true
+#   novnc:
+#     container_name: novnc
+#     image: theasp/novnc
+#     networks:
+#       ros-custom:
+#     ports:
+#       - "8080:8080"
+#     tty: true
 
 networks:
   ros-custom:
