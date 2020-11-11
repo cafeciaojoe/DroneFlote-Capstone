@@ -3,7 +3,7 @@ RUN apt-key del 421C365BD9FF1F717815A3895523BAEEB01FA116
 RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt update && apt dist-upgrade -y && apt install -y curl gnupg2 apt-utils lsb-release locales git
+RUN apt update && apt dist-upgrade -y && apt install -y curl gnupg2 apt-utils lsb-release locales git python3 python3-pip
 RUN locale-gen en_US en_US.UTF-8
 RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 RUN export LANG=en_US.UTF-8
@@ -31,8 +31,6 @@ RUN apt-get -qq update && \
         ros-melodic-common-msgs \
         libeigen3-dev ros-melodic-eigenpy \
         ros-melodic-mav-msgs
-
-
 
 RUN rosdep init
 RUN rosdep update
@@ -63,9 +61,9 @@ COPY *.* ./
 #RUN cp -r common_msgs/* ${CATKIN_PACKAGE_BIN_DESTINATION}
 
 WORKDIR /parser/src/parser
-
 RUN chmod +x -R python
-RUN pip2 install -r python/requirements.txt
+RUN pip3 install wheel
+RUN pip3 install -r python/requirements.txt
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
     echo catkin_install_python\(PROGRAMS python/parser.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}\) >> CMakeLists.txt"
 #RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
@@ -73,6 +71,7 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
 
 WORKDIR /parser
 
+ENV ROS_PYTHON_VERSION=3
 RUN rosdep update
 RUN echo "rosdep install --from-paths src/ -r -y" > rosinst.sh
 RUN chmod +x rosinst.sh
