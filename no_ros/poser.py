@@ -26,11 +26,6 @@ def index():
     """
 
     # time.sleep(0.1)
-    # data = request.get_json()
-    # if type(data) is list:
-    #     data = data[0]
-    #     # TODO Send data here
-    # return "", 201
     return app.send_static_file("camera.html")
 
 # @app.route("/extra", methods=['GET', 'POST', 'OPTIONS'])
@@ -38,13 +33,17 @@ def index():
 # def send_js():
 #     return app.send_static_file("camera.b3ee27ff.js")
 
-@app.route("/pose", methods=['GET', 'POST', 'OPTIONS'])
+@app.route("/backend", methods=['GET', 'POST', 'OPTIONS'])
 def coco():
     """
     Initial test functionality from posenet.
 
     """
-    print(request.get_json(force=True))
+    data = request.get_json()
+    if type(data) is list:
+        data = data[0]
+        # TODO Send data here
+    return "", 201
 
 
 # Start server.
