@@ -47,4 +47,3 @@ vcstools~=0.1.42
 wadllib~=1.3.2
 wstool~=0.1.17
 zope.interface
-cfclient

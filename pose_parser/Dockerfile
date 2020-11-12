@@ -70,6 +70,9 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c \
 #    echo include_directories\(${Eigen_INCLUDE_DIRS}\) >> CMakeLists.txt"
 
 WORKDIR /parser
+RUN git clone -b HTTYD https://github.com/cafeciaojoe/crazyflie-clients-python.git
+RUN python3 -m pip install -e crazyflie-clients-python/
+
 
 ENV ROS_PYTHON_VERSION=3
 RUN rosdep update
@@ -82,6 +85,7 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_make
 RUN catkin init
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && /bin/bash -c catkin_make"
 RUN rosdep update
+RUN apt install -y python3-pyqt5
 
 # Move script to local dir
 RUN mv /parser/src/parser/python/start.sh .
