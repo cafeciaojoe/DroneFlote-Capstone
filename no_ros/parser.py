@@ -50,6 +50,8 @@ class PoseParserNode:
     def instance(cls):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
+            cls.metrics = PoseMetrics()
+            cls.metric_functions = PoseMetrics.metric_list.keys()
         return cls._instance
 
     def convert_to_dictionary(self, data):
@@ -83,8 +85,9 @@ class PoseParserNode:
             data: Data received from ROS subscription.
 
         """
-        points_data = json.loads(data.data)
-        keypoints = self.convert_to_dictionary(points_data)
+        # points_data = json.loads(data)
+        points_data = data
+        keypoints = self.convert_to_dictionary(points_data["keypoints"])
         if self.DEFAULT_METRIC in PoseParserNode.metric_functions:
             trajectory_points = PoseParserNode.metrics.execute_metric(self.DEFAULT_METRIC, keypoints)
             if trajectory_points is not None:
