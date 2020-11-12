@@ -41,6 +41,7 @@ services:
 #    depends_on:
 #      - roscore
 #      - novnc
+#
 
   posenet:
     build:
