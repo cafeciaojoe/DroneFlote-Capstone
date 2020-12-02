@@ -111,8 +111,8 @@ class PoseParserNode:
             address: The address of the sender.
             message(str): The message received.
         """
-        # self.callback(message)
-        print(message)
+        self.callback(message)
+        # print(message)
         return "DONE"
 
     def publisher(self, trajectory_parameters):
@@ -596,5 +596,6 @@ class PoseMetrics:
 
 if __name__ == '__main__':
     # Startup for node.
+    # TODO - These two lines are how to create the pose parser object and start the server.
     node = PoseParserNode.instance()
     node.listener()
