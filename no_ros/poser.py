@@ -1,9 +1,8 @@
 #! /usr/bin/python
 import time
-
+from socket_class import SocketManager
 from flask import Flask, render_template, json, request, send_from_directory
 from flask_cors import CORS, cross_origin
-from parser import PoseParserNode
 import logging
 """
 Runs a simple Flask server for communication between Posenet and ROS
@@ -12,8 +11,7 @@ Runs a simple Flask server for communication between Posenet and ROS
 app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-pose_parser = PoseParserNode.instance()
-
+socket_manager = SocketManager(None, server=False)
 
 @app.route('/<path:path>')
 def send_js(path):
@@ -25,7 +23,6 @@ def index():
     """
     Contact point for Posenet to send data to.
     Publishes the data to a publish topic for Pose Parser Node.
-
     """
 
     # time.sleep(0.1)
@@ -46,10 +43,11 @@ def coco():
 
     if type(data) is list:
         data = data[0]
-        pose_parser.callback(data)
+        socket_manager.send_message(message=data)
     return "", 200
 
 
 # Start server.
 app.run(host="0.0.0.0", debug=False)
-
+# test = ["hi", 7, "pewpew", [1, 2, 3]]
+# socket_manager.send_message(message=test)
